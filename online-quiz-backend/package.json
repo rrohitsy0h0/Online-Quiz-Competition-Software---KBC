@@ -1,0 +1,43 @@
+{
+  "name": "online-quiz-backend",
+  "version": "1.0.0",
+  "description": "Backend for an online quiz competition software using the MERN stack.",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsc && node dist/server.js",
+    "dev": "ts-node-dev --respawn src/server.ts",
+    "build": "tsc",
+    "test": "jest",
+    "start:dev": "nodemon src/server.ts"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^8.6.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^8.12.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^26.0.0",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/mongoose": "^5.10.2",
+    "@types/node": "^22.13.10",
+    "jest": "^26.6.3",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "quiz",
+    "competition",
+    "mern",
+    "backend"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
