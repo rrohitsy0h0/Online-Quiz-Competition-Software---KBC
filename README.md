@@ -50,7 +50,7 @@ online-quiz-backend/
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/rrohitsy0h0/Online-Quiz-Competition-Software---KBC
    cd online-quiz-backend
    ```
 
@@ -114,4 +114,4 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](./LICENSE).
