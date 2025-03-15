@@ -1,0 +1,41 @@
+Implemented Features:
+
+1. User Authentication:
+   - User registration with hashed passwords.
+   - User login with JWT-based authentication.
+
+2. Question Management:
+   - CRUD operations for questions.
+   - Fetch questions by level.
+   - Timer functionality for each question.
+   - Lifelines:
+     - 50:50
+     - Phone a Friend
+     - Audience Poll
+     - Flip the Question (change question).
+
+3. Leaderboard Management:
+   - Fetch top 10 leaderboard entries.
+   - Add scores to the leaderboard.
+
+4. Database Configuration:
+   - MongoDB connection setup using Mongoose.
+   - Seed script to populate the database with questions.
+
+5. Middleware:
+   - Authentication middleware to verify JWT tokens.
+
+6. Timer Utility:
+   - Timer for question time limits with timeout handling.
+
+7. Server Setup:
+   - Express server with routes for authentication, questions, and leaderboard.
+
+8. TypeScript Configuration:
+   - Strict type checking with custom types for Express.
+
+9. Environment Variables:
+   - Secure configuration for sensitive data (e.g., MongoDB URI, JWT secret).
+
+10. Project Structure:
+    - Organized folder structure for controllers, models, routes, and utilities.
