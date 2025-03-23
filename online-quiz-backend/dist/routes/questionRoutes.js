@@ -25,4 +25,6 @@ router.post('/lifeline', authMiddleware_1.authMiddleware, questionController_1.d
 router.post('/next', authMiddleware_1.authMiddleware, questionController_1.default.nextQuestion);
 // Route to reset lifelines
 router.post('/reset-lifelines', authMiddleware_1.authMiddleware, questionController_1.default.resetLifelines);
+// Route to reset the user's score
+router.post('/reset-score', authMiddleware_1.authMiddleware, questionController_1.default.resetScore);
 exports.default = router;

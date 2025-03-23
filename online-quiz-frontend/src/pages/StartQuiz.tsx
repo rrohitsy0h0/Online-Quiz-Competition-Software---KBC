@@ -39,6 +39,24 @@ const StartQuiz: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        const resetScore = async () => {
+            try {
+                const token = localStorage.getItem('token'); // Get token from localStorage
+                await api.post('/questions/reset-score', {}, {
+                    headers: { Authorization: `Bearer ${token}` }, // Add Authorization header
+                });
+                setScore(0); // Reset the score in the frontend
+                console.log('Score reset successfully'); // Debugging log
+            } catch (err: any) {
+                console.error('Error resetting score:', err.response?.data || err.message);
+                setError('Failed to reset score. Please try again later.');
+            }
+        };
+
+        resetScore(); // Reset the score when the quiz starts
+    }, []);
+
+    useEffect(() => {
         const fetchQuestions = async () => {
             try {
                 const token = localStorage.getItem('token'); // Get token from localStorage
@@ -92,7 +110,10 @@ const StartQuiz: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            if (response.data.nextLevel !== undefined) {
+            if (response.data.message === 'Wrong answer. Redirecting to dashboard.') {
+                alert('Quiz over! Redirecting to leaderboard...');
+                navigate('/leaderboard'); // Redirect to leaderboard
+            } else if (response.data.nextLevel !== undefined) {
                 alert(response.data.message);
                 setCurrentLevel(response.data.nextLevel);
                 setCurrentQuestionIndex(response.data.currentQuestionIndex); // Will be 0
@@ -105,8 +126,8 @@ const StartQuiz: React.FC = () => {
             setError('');
         } catch (err: any) {
             if (err.response?.status === 400 && err.response?.data?.message === 'Wrong answer. Redirecting to dashboard.') {
-                alert('Wrong answer. Redirecting to dashboard.');
-                navigate('/dashboard');
+                alert('Quiz over! Redirecting to leaderboard...');
+                navigate('/leaderboard'); // Redirect to leaderboard
             } else {
                 console.error('Error submitting answer:', err.response?.data || err.message);
                 setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');

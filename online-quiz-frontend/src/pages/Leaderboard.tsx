@@ -4,7 +4,7 @@ import api from '../services/api';
 
 interface LeaderboardEntry {
     username: string;
-    score: number;
+    maxScore: number; // Display the maximum score
     timeTaken: number;
 }
 
@@ -17,7 +17,8 @@ const Leaderboard: React.FC = () => {
         const fetchLeaderboard = async () => {
             try {
                 const response = await api.get('/leaderboard');
-                setLeaderboard(response.data);
+                setLeaderboard(response.data); // Ensure leaderboard data is set
+                console.log('Leaderboard data fetched:', response.data); // Debugging log
             } catch (err: any) {
                 console.error('Error fetching leaderboard:', err.response?.data || err.message);
                 setError('Failed to load leaderboard. Please try again later.');
@@ -39,7 +40,7 @@ const Leaderboard: React.FC = () => {
                     <tr>
                         <th style={styles.th}>Rank</th>
                         <th style={styles.th}>Username</th>
-                        <th style={styles.th}>Score</th>
+                        <th style={styles.th}>Max Score</th>
                         <th style={styles.th}>Time Taken</th>
                     </tr>
                 </thead>
@@ -48,7 +49,7 @@ const Leaderboard: React.FC = () => {
                         <tr key={index}>
                             <td style={styles.td}>{index + 1}</td>
                             <td style={styles.td}>{entry.username}</td>
-                            <td style={styles.td}>{entry.score}</td>
+                            <td style={styles.td}>{entry.maxScore}</td>
                             <td style={styles.td}>{entry.timeTaken} seconds</td>
                         </tr>
                     ))}

@@ -34,10 +34,20 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const LeaderboardSchema = new mongoose_1.Schema({
-    userId: { type: mongoose_1.default.Types.ObjectId, required: true, ref: 'User' },
-    score: { type: Number, required: true },
-    timeTaken: { type: Number, required: true }
-}, { timestamps: true });
-const Leaderboard = mongoose_1.default.model('Leaderboard', LeaderboardSchema);
+const leaderboardSchema = new mongoose_1.Schema({
+    username: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    maxScore: {
+        type: Number,
+        required: true,
+    },
+    timeTaken: {
+        type: Number,
+        required: true,
+    },
+});
+const Leaderboard = mongoose_1.default.model('Leaderboard', leaderboardSchema);
 exports.default = Leaderboard;

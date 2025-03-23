@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Question_1 = __importDefault(require("../models/Question"));
 const User_1 = __importDefault(require("../models/User")); // Import User model
 const timer_1 = require("../utils/timer");
+const Leaderboard_1 = __importDefault(require("../models/Leaderboard")); // Import Leaderboard model
 class QuestionController {
     // Method to retrieve all questions
     getAllQuestions(req, res) {
@@ -211,6 +212,8 @@ class QuestionController {
                     yield user.save();
                 }
                 if (question.correctAnswer !== answer) {
+                    // Add or update leaderboard when the quiz ends
+                    yield this.updateLeaderboard(user);
                     return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
                 }
                 // Increment score for correct answer using level-based points
@@ -223,6 +226,8 @@ class QuestionController {
                 if (user.currentQuestionIndex + 1 >= totalQuestionsForLevel) {
                     user.currentQuestionIndex = 0; // Reset for next level
                     yield user.save();
+                    // Add or update leaderboard when the quiz ends
+                    yield this.updateLeaderboard(user);
                     return res.status(200).json({
                         message: 'Level completed! Proceeding to the next level.',
                         nextLevel: question.level + 1,
@@ -246,6 +251,31 @@ class QuestionController {
             }
         });
     }
+    // Add or update leaderboard
+    updateLeaderboard(user) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existingEntry = yield Leaderboard_1.default.findOne({ username: user.username });
+            if (existingEntry) {
+                // Update the leaderboard entry if the current score is higher than the maxScore
+                if (user.score > existingEntry.maxScore) {
+                    existingEntry.maxScore = user.score;
+                    existingEntry.timeTaken = user.timeTaken; // Update timeTaken for the new max score
+                    yield existingEntry.save();
+                    console.log(`Leaderboard updated for user: ${user.username}, new maxScore: ${user.score}`);
+                }
+            }
+            else {
+                // Add a new leaderboard entry
+                const newEntry = new Leaderboard_1.default({
+                    username: user.username,
+                    maxScore: user.score,
+                    timeTaken: user.timeTaken,
+                });
+                yield newEntry.save();
+                console.log(`New leaderboard entry created for user: ${user.username}, maxScore: ${user.score}`);
+            }
+        });
+    }
     // Method to reset lifelines
     resetLifelines(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -266,6 +296,31 @@ class QuestionController {
             catch (error) {
                 console.error('Error resetting lifelines:', error);
                 res.status(500).json({ message: 'Failed to reset lifelines. Please try again later.' });
+            }
+        });
+    }
+    // Method to reset the user's score
+    resetScore(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            if (!userId) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+            try {
+                const user = yield User_1.default.findById(userId);
+                if (!user) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
+                user.score = 0; // Reset the score to 0
+                user.currentQuestionIndex = 0; // Reset the question index
+                yield user.save();
+                console.log(`Score reset for user: ${user.username}`); // Debugging log
+                res.status(200).json({ message: 'Score reset successfully' });
+            }
+            catch (error) {
+                console.error('Error resetting score:', error);
+                res.status(500).json({ message: 'Failed to reset score. Please try again later.' });
             }
         });
     }

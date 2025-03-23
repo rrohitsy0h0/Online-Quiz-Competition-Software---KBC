@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Question from '../models/Question';
 import User from '../models/User'; // Import User model
 import { startQuestionTimer } from '../utils/timer';
+import Leaderboard from '../models/Leaderboard'; // Import Leaderboard model
 
 interface AuthenticatedRequest extends Request {
     user?: { id: string; username: string }; // Ensure consistency with index.d.ts
@@ -209,6 +210,8 @@ class QuestionController {
             }
 
             if (question.correctAnswer !== answer) {
+                // Add or update leaderboard when the quiz ends
+                await this.updateLeaderboard(user);
                 return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
             }
 
@@ -224,6 +227,10 @@ class QuestionController {
             if (user.currentQuestionIndex + 1 >= totalQuestionsForLevel) {
                 user.currentQuestionIndex = 0; // Reset for next level
                 await user.save();
+
+                // Add or update leaderboard when the quiz ends
+                await this.updateLeaderboard(user);
+
                 return res.status(200).json({
                     message: 'Level completed! Proceeding to the next level.',
                     nextLevel: question.level + 1,
@@ -244,6 +251,30 @@ class QuestionController {
         } catch (error) {
             console.error('Error answering question:', error);
             res.status(500).json({ message: 'Error answering question', error });
+        }
+    }
+
+    // Add or update leaderboard
+    private async updateLeaderboard(user: any) {
+        const existingEntry = await Leaderboard.findOne({ username: user.username });
+
+        if (existingEntry) {
+            // Update the leaderboard entry if the current score is higher than the maxScore
+            if (user.score > existingEntry.maxScore) {
+                existingEntry.maxScore = user.score;
+                existingEntry.timeTaken = user.timeTaken; // Update timeTaken for the new max score
+                await existingEntry.save();
+                console.log(`Leaderboard updated for user: ${user.username}, new maxScore: ${user.score}`);
+            }
+        } else {
+            // Add a new leaderboard entry
+            const newEntry = new Leaderboard({
+                username: user.username,
+                maxScore: user.score,
+                timeTaken: user.timeTaken,
+            });
+            await newEntry.save();
+            console.log(`New leaderboard entry created for user: ${user.username}, maxScore: ${user.score}`);
         }
     }
 
@@ -268,6 +299,32 @@ class QuestionController {
         } catch (error) {
             console.error('Error resetting lifelines:', error);
             res.status(500).json({ message: 'Failed to reset lifelines. Please try again later.' });
+        }
+    }
+
+    // Method to reset the user's score
+    async resetScore(req: AuthenticatedRequest, res: Response) {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        try {
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            user.score = 0; // Reset the score to 0
+            user.currentQuestionIndex = 0; // Reset the question index
+            await user.save();
+
+            console.log(`Score reset for user: ${user.username}`); // Debugging log
+            res.status(200).json({ message: 'Score reset successfully' });
+        } catch (error) {
+            console.error('Error resetting score:', error);
+            res.status(500).json({ message: 'Failed to reset score. Please try again later.' });
         }
     }
 }

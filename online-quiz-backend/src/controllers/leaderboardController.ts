@@ -2,15 +2,15 @@ import { Request, Response } from 'express';
 import Leaderboard from '../models/Leaderboard';
 
 class LeaderboardController {
-    // Method to get the leaderboard
     async getLeaderboard(req: Request, res: Response) {
         try {
-            const leaderboard = await Leaderboard.find()
-                .sort({ score: -1, timeTaken: 1 }) // Rank by score, then by minimum time
-                .limit(10);
+            // Fetch leaderboard sorted by maxScore in descending order
+            const leaderboard = await Leaderboard.find().sort({ maxScore: -1 }).limit(10);
+            console.log('Fetched leaderboard:', leaderboard); // Debugging log
             res.status(200).json(leaderboard);
         } catch (error) {
-            res.status(500).json({ message: 'Error retrieving leaderboard', error });
+            console.error('Error fetching leaderboard:', error);
+            res.status(500).json({ message: 'Error fetching leaderboard' });
         }
     }
 
