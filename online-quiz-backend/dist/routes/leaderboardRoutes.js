@@ -4,11 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const leaderboardController_1 = __importDefault(require("../controllers/leaderboardController"));
+const leaderboardController_1 = __importDefault(require("../controllers/leaderboardController")); // Import the default instance
 const router = (0, express_1.Router)();
-const leaderboardController = new leaderboardController_1.default();
 // Route to get the leaderboard
-router.get('/', leaderboardController.getLeaderboard);
+router.get('/', leaderboardController_1.default.getLeaderboard);
 // Route to add a score to the leaderboard
-router.post('/add', leaderboardController.addScore);
+router.post('/add', leaderboardController_1.default.addScore);
 exports.default = router;

@@ -42,7 +42,8 @@ class AuthController {
                 if (!isMatch) {
                     return res.status(401).json({ message: 'Invalid credentials' });
                 }
-                const token = jsonwebtoken_1.default.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
+                const token = jsonwebtoken_1.default.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || 'secret', // Using JWT_SECRET here
+                { expiresIn: '1h' });
                 res.status(200).json({ token });
             }
             catch (error) {

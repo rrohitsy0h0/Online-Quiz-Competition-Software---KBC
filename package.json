@@ -1,0 +1,17 @@
+{
+  "name": "online-quiz",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "online-quiz-backend",
+    "online-quiz-frontend"
+  ],
+  "scripts": {
+    "start:backend": "npm start --workspace online-quiz-backend",
+    "start:frontend": "npm start --workspace online-quiz-frontend",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

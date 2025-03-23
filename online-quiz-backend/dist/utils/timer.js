@@ -21,9 +21,10 @@ function resetTimer(duration) {
 function startQuestionTimer(duration, onTimeout) {
     let timer = duration;
     const interval = setInterval(() => {
+        console.log(`Time remaining: ${timer} seconds`);
         if (--timer < 0) {
             clearInterval(interval);
-            onTimeout();
+            onTimeout(); // Trigger the timeout callback
         }
     }, 1000);
 }

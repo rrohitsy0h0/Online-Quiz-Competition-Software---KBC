@@ -52,6 +52,10 @@ const questionSchema = new mongoose_1.Schema({
         required: true,
         default: 30, // Default time limit is 30 seconds
     },
+    level: {
+        type: Number,
+        required: true, // Ensure level is required
+    },
 });
 const Question = mongoose_1.default.model('Question', questionSchema);
 exports.default = Question;

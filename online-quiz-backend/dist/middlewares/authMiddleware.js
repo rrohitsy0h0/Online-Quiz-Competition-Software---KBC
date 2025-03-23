@@ -21,10 +21,10 @@ const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         return res.status(401).json({ message: 'No token provided, authorization denied.' });
     }
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'abc123'); // Using JWT_SECRET here
         req.user = {
             id: decoded.id,
-            username: decoded.username // Add username to req.user
+            username: decoded.username
         };
         next();
     }

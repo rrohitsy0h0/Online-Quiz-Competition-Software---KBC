@@ -1,20 +1,54 @@
-# Online Quiz Competition Software
+# Online Quiz Backend
 
-This project is an online quiz competition software built using the MERN stack (MongoDB, Express, React, Node.js). It provides a platform for users to participate in quizzes, manage their scores, and view leaderboards.
+This is the backend server for the Online Quiz Competition platform. It is built with Node.js, Express, and MongoDB.
 
 ## Features
+- User authentication (login/register)
+- Quiz question management
+- Leaderboard management
 
-- User authentication (registration and login)
-- Display of user names
-- A database of questions with multiple-choice options
-- Timer for each question
-- Navigation through questions with a "Next Question" button
-- Lifelines: 
-  - 50:50
-  - Phone a Friend
-  - Audience Poll
-- Ranking system based on questions answered and time taken
-- Time limits for the first 10 questions
+## Prerequisites
+- Node.js (v16 or later)
+- MongoDB (running locally or on a cloud service like MongoDB Atlas)
+
+## Setup Instructions
+
+1. Navigate to the backend directory:
+   ```bash
+   cd online-quiz-backend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env` file in the root of the backend directory with the following variables:
+   ```
+   MONGO_URI=<your-mongodb-connection-string>
+   JWT_SECRET=<your-jwt-secret>
+   ```
+
+4. Start the backend server:
+   ```bash
+   npm start
+   ```
+
+The backend will run on `http://localhost:5000`.
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login a user
+
+### Questions
+- `GET /api/questions?level=<level>` - Fetch questions for a specific level
+- `POST /api/questions/answer` - Submit an answer for a question
+
+### Leaderboard
+- `GET /api/leaderboard` - Fetch the leaderboard
+- `POST /api/leaderboard/add` - Add a score to the leaderboard
 
 ## Project Structure
 
@@ -45,31 +79,6 @@ online-quiz-backend
 ├── tsconfig.json
 └── README.md
 ```
-
-## Setup Instructions
-
-1. **Clone the repository:**
-   ```
-   git clone <repository-url>
-   cd online-quiz-backend
-   ```
-
-2. **Install dependencies:**
-   ```
-   npm install
-   ```
-
-3. **Set up the database:**
-   - Ensure you have MongoDB installed and running.
-   - Update the database connection settings in `src/config/db.ts`.
-
-4. **Run the application:**
-   ```
-   npm start
-   ```
-
-5. **Access the API:**
-   - The server will be running on `http://localhost:5000` (or the specified port).
 
 ## Technologies Used
 

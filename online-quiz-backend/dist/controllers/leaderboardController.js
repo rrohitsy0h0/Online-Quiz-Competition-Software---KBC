@@ -42,21 +42,5 @@ class LeaderboardController {
             }
         });
     }
-    // Method to get a user's score
-    getUserScore(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { userId } = req.params;
-            try {
-                const userScore = yield Leaderboard_1.default.findOne({ userId });
-                if (!userScore) {
-                    return res.status(404).json({ message: 'User not found' });
-                }
-                res.status(200).json(userScore);
-            }
-            catch (error) {
-                res.status(500).json({ message: 'Error retrieving user score', error });
-            }
-        });
-    }
 }
 exports.default = new LeaderboardController();

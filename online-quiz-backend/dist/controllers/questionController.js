@@ -14,12 +14,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Question_1 = __importDefault(require("../models/Question"));
 const User_1 = __importDefault(require("../models/User")); // Import User model
+const timer_1 = require("../utils/timer");
 class QuestionController {
     // Method to retrieve all questions
     getAllQuestions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            const { level } = req.query; // Get the level from query parameters
             try {
-                const questions = yield Question_1.default.aggregate([{ $sample: { size: 16 } }]); // Fetch 16 random questions
+                const query = level ? { level: parseInt(level, 10) } : {};
+                const questions = yield Question_1.default.find(query); // Fetch questions based on level
                 res.status(200).json(questions);
             }
             catch (error) {
@@ -94,6 +97,9 @@ class QuestionController {
             var _a;
             const { lifelineType } = req.body;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            if (!userId) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
             try {
                 const user = yield User_1.default.findById(userId);
                 if (!user) {
@@ -115,9 +121,23 @@ class QuestionController {
                     case 'audiencePoll':
                         lifelineResult = 'Audience Poll lifeline used';
                         break;
-                    case 'changeQuestion':
-                        lifelineResult = 'Question changed';
-                        break;
+                    case 'changeQuestion': {
+                        // Flip the question logic
+                        const currentQuestion = yield Question_1.default.findOne().skip(user.currentQuestionIndex);
+                        if (!currentQuestion) {
+                            return res.status(404).json({ message: 'Current question not found' });
+                        }
+                        const currentQuestionObj = currentQuestion.toObject(); // Convert to plain object
+                        const flippedQuestion = yield Question_1.default.aggregate([
+                            { $match: { level: currentQuestionObj.level, _id: { $ne: currentQuestionObj._id } } },
+                            { $sample: { size: 1 } }
+                        ]);
+                        if (!flippedQuestion.length) {
+                            return res.status(404).json({ message: 'No alternative questions available' });
+                        }
+                        lifelineResult = 'Question flipped successfully';
+                        return res.status(200).json({ message: lifelineResult, question: flippedQuestion[0] });
+                    }
                     default:
                         return res.status(400).json({ message: 'Invalid lifeline type' });
                 }
@@ -133,6 +153,9 @@ class QuestionController {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            if (!userId) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
             try {
                 const user = yield User_1.default.findById(userId);
                 if (!user) {
@@ -158,6 +181,17 @@ class QuestionController {
                 else {
                     timeLimit = null; // Last 4 questions: No time limit
                 }
+                // Start the timer for the question
+                if (timeLimit) {
+                    (0, timer_1.startQuestionTimer)(timeLimit, () => __awaiter(this, void 0, void 0, function* () {
+                        console.log(`Time's up for question ${user.currentQuestionIndex}`);
+                        // Mark the participant as having lost
+                        user.score = 0; // Reset score
+                        user.currentQuestionIndex = 0; // Reset question index
+                        yield user.save();
+                        console.log(`User ${user.username} has lost the game due to timeout.`);
+                    }));
+                }
                 res.status(200).json({ question, timeLimit });
             }
             catch (error) {
@@ -171,6 +205,9 @@ class QuestionController {
             var _a;
             const { questionId, answer, lifelineUsed } = req.body;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            if (!userId) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
             try {
                 const question = yield Question_1.default.findById(questionId);
                 if (!question) {

@@ -4,14 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const db_1 = __importDefault(require("./config/db")); // Fix the import
 const body_parser_1 = __importDefault(require("body-parser"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const questionRoutes_1 = __importDefault(require("./routes/questionRoutes"));
 const leaderboardRoutes_1 = __importDefault(require("./routes/leaderboardRoutes"));
-const db_1 = require("./config/db");
 const app = (0, express_1.default)();
 // Connect to the database
-(0, db_1.connectDB)();
+(0, db_1.default)();
 // Middleware
 app.use(body_parser_1.default.json());
 app.use(body_parser_1.default.urlencoded({ extended: true }));
