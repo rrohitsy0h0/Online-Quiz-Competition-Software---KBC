@@ -17,6 +17,29 @@ const User_1 = __importDefault(require("../models/User")); // Import User model
 const timer_1 = require("../utils/timer");
 const Leaderboard_1 = __importDefault(require("../models/Leaderboard")); // Import Leaderboard model
 class QuestionController {
+    constructor() {
+        // Add or update leaderboard
+        this.updateLeaderboard = (user) => __awaiter(this, void 0, void 0, function* () {
+            const existingEntry = yield Leaderboard_1.default.findOne({ username: user.username });
+            if (existingEntry) {
+                if (user.score > existingEntry.maxScore) {
+                    existingEntry.maxScore = user.score;
+                    existingEntry.timeTaken = user.timeTaken;
+                    yield existingEntry.save();
+                    console.log(`Leaderboard updated for user: ${user.username}, new maxScore: ${user.score}`);
+                }
+            }
+            else {
+                const newEntry = new Leaderboard_1.default({
+                    username: user.username,
+                    maxScore: user.score,
+                    timeTaken: user.timeTaken,
+                });
+                yield newEntry.save();
+                console.log(`New leaderboard entry created for user: ${user.username}, maxScore: ${user.score}`);
+            }
+        });
+    }
     // Method to retrieve all questions
     getAllQuestions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -248,31 +271,6 @@ class QuestionController {
             catch (error) {
                 console.error('Error answering question:', error);
                 res.status(500).json({ message: 'Error answering question', error });
-            }
-        });
-    }
-    // Add or update leaderboard
-    updateLeaderboard(user) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const existingEntry = yield Leaderboard_1.default.findOne({ username: user.username });
-            if (existingEntry) {
-                // Update the leaderboard entry if the current score is higher than the maxScore
-                if (user.score > existingEntry.maxScore) {
-                    existingEntry.maxScore = user.score;
-                    existingEntry.timeTaken = user.timeTaken; // Update timeTaken for the new max score
-                    yield existingEntry.save();
-                    console.log(`Leaderboard updated for user: ${user.username}, new maxScore: ${user.score}`);
-                }
-            }
-            else {
-                // Add a new leaderboard entry
-                const newEntry = new Leaderboard_1.default({
-                    username: user.username,
-                    maxScore: user.score,
-                    timeTaken: user.timeTaken,
-                });
-                yield newEntry.save();
-                console.log(`New leaderboard entry created for user: ${user.username}, maxScore: ${user.score}`);
             }
         });
     }

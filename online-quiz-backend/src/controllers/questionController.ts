@@ -255,19 +255,17 @@ class QuestionController {
     }
 
     // Add or update leaderboard
-    private async updateLeaderboard(user: any) {
+    private updateLeaderboard = async (user: any) => {
         const existingEntry = await Leaderboard.findOne({ username: user.username });
 
         if (existingEntry) {
-            // Update the leaderboard entry if the current score is higher than the maxScore
             if (user.score > existingEntry.maxScore) {
                 existingEntry.maxScore = user.score;
-                existingEntry.timeTaken = user.timeTaken; // Update timeTaken for the new max score
+                existingEntry.timeTaken = user.timeTaken;
                 await existingEntry.save();
                 console.log(`Leaderboard updated for user: ${user.username}, new maxScore: ${user.score}`);
             }
         } else {
-            // Add a new leaderboard entry
             const newEntry = new Leaderboard({
                 username: user.username,
                 maxScore: user.score,
@@ -276,7 +274,7 @@ class QuestionController {
             await newEntry.save();
             console.log(`New leaderboard entry created for user: ${user.username}, maxScore: ${user.score}`);
         }
-    }
+    };
 
     // Method to reset lifelines
     async resetLifelines(req: AuthenticatedRequest, res: Response) {

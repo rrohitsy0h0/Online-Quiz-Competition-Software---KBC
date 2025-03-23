@@ -8,7 +8,7 @@ const questionController_1 = __importDefault(require("../controllers/questionCon
 const authMiddleware_1 = require("../middlewares/authMiddleware");
 const router = express_1.default.Router();
 // Route to get all questions
-router.get('/', authMiddleware_1.authMiddleware, questionController_1.default.getAllQuestions); // Add authMiddleware
+router.get('/', authMiddleware_1.authMiddleware, questionController_1.default.getAllQuestions);
 // Route to create a new question
 router.post('/', authMiddleware_1.authMiddleware, questionController_1.default.createQuestion);
 // Route to get a question by ID

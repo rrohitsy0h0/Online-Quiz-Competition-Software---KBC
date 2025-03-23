@@ -5,7 +5,7 @@ import { authMiddleware } from '../middlewares/authMiddleware';
 const router = express.Router();
 
 // Route to get all questions
-router.get('/', authMiddleware, questionController.getAllQuestions); // Add authMiddleware
+router.get('/', authMiddleware, questionController.getAllQuestions);
 
 // Route to create a new question
 router.post('/', authMiddleware, questionController.createQuestion);

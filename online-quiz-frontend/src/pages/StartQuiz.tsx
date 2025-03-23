@@ -92,7 +92,7 @@ const StartQuiz: React.FC = () => {
 
             return () => clearInterval(timer); // Clear timer on component unmount or question change
         }
-    }, [currentQuestionIndex, questions]);
+    }, [currentQuestionIndex, questions, navigate]); // Add 'navigate' to the dependency array
 
     const handleAnswerSubmit = async () => {
         if (!selectedAnswer) {
