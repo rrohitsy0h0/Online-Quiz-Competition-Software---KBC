@@ -23,4 +23,6 @@ router.post('/answer', authMiddleware_1.authMiddleware, questionController_1.def
 router.post('/lifeline', authMiddleware_1.authMiddleware, questionController_1.default.useLifeline);
 // Route to navigate to the next question
 router.post('/next', authMiddleware_1.authMiddleware, questionController_1.default.nextQuestion);
+// Route to reset lifelines
+router.post('/reset-lifelines', authMiddleware_1.authMiddleware, questionController_1.default.resetLifelines);
 exports.default = router;

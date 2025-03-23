@@ -17,7 +17,10 @@ const PORT = process.env.PORT || 5000;
 (0, db_1.default)();
 // Middleware to parse JSON
 app.use(express_1.default.json());
-app.use((0, cors_1.default)()); // Ensure CORS is enabled
+app.use((0, cors_1.default)({
+    origin: 'http://localhost:3000', // Replace with your frontend URL
+    credentials: true,
+})); // Ensure CORS is enabled
 // Define routes
 app.use('/api/auth', authRoutes_1.default); // Use authRoutes
 app.use('/api/questions', questionRoutes_1.default); // Use questionRoutes

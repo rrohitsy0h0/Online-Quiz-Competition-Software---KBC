@@ -95,7 +95,7 @@ class QuestionController {
     useLifeline(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            const { lifelineType } = req.body;
+            const { lifelineType, questionId } = req.body;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
             if (!userId) {
                 return res.status(401).json({ message: 'Unauthorized' });
@@ -105,45 +105,31 @@ class QuestionController {
                 if (!user) {
                     return res.status(404).json({ message: 'User not found' });
                 }
-                if (user.lifelinesUsed >= 4) {
-                    return res.status(400).json({ message: 'No lifelines remaining' });
+                // Check if the lifeline has already been used
+                if (user.lifelinesUsed.get(lifelineType)) {
+                    return res.status(400).json({ message: `Lifeline '${lifelineType}' has already been used.` });
                 }
-                user.lifelinesUsed += 1;
-                yield user.save();
+                const question = yield Question_1.default.findById(questionId);
+                if (!question) {
+                    return res.status(404).json({ message: 'Question not found' });
+                }
                 let lifelineResult;
-                switch (lifelineType) {
-                    case '5050':
-                        lifelineResult = '50:50 lifeline used';
-                        break;
-                    case 'phoneAFriend':
-                        lifelineResult = 'Phone a Friend lifeline used';
-                        break;
-                    case 'audiencePoll':
-                        lifelineResult = 'Audience Poll lifeline used';
-                        break;
-                    case 'changeQuestion': {
-                        // Flip the question logic
-                        const currentQuestion = yield Question_1.default.findOne().skip(user.currentQuestionIndex);
-                        if (!currentQuestion) {
-                            return res.status(404).json({ message: 'Current question not found' });
-                        }
-                        const currentQuestionObj = currentQuestion.toObject(); // Convert to plain object
-                        const flippedQuestion = yield Question_1.default.aggregate([
-                            { $match: { level: currentQuestionObj.level, _id: { $ne: currentQuestionObj._id } } },
-                            { $sample: { size: 1 } }
-                        ]);
-                        if (!flippedQuestion.length) {
-                            return res.status(404).json({ message: 'No alternative questions available' });
-                        }
-                        lifelineResult = 'Question flipped successfully';
-                        return res.status(200).json({ message: lifelineResult, question: flippedQuestion[0] });
-                    }
-                    default:
-                        return res.status(400).json({ message: 'Invalid lifeline type' });
+                if (lifelineType === '5050') {
+                    // Changed: For 50:50, select one random incorrect option so result has 2 options in total
+                    const incorrectOptions = question.options.filter(opt => opt !== question.correctAnswer);
+                    const randomIncorrectOption = incorrectOptions.sort(() => 0.5 - Math.random()).slice(0, 1);
+                    lifelineResult = [question.correctAnswer, ...randomIncorrectOption].sort(() => 0.5 - Math.random());
                 }
-                res.status(200).json({ message: lifelineResult });
+                else {
+                    return res.status(400).json({ message: 'Invalid lifeline type' });
+                }
+                // Mark the lifeline as used
+                user.lifelinesUsed.set(lifelineType, true);
+                yield user.save();
+                res.status(200).json({ message: 'Lifeline used successfully', lifelineType, result: lifelineResult });
             }
             catch (error) {
+                console.error('Error using lifeline:', error);
                 res.status(500).json({ message: 'Error using lifeline', error });
             }
         });
@@ -218,21 +204,68 @@ class QuestionController {
                     return res.status(404).json({ message: 'User not found' });
                 }
                 if (lifelineUsed) {
-                    if (user.lifelinesUsed >= 4) {
+                    if (user.lifelinesUsed.size >= 4) {
                         return res.status(400).json({ message: 'No lifelines remaining' });
                     }
-                    user.lifelinesUsed += 1;
+                    user.lifelinesUsed.set(lifelineUsed, true);
                     yield user.save();
                 }
                 if (question.correctAnswer !== answer) {
-                    return res.status(400).json({ message: 'Wrong answer. Game over.' });
+                    return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
                 }
-                user.score += 1; // Increment score for correct answer
+                // Increment score for correct answer using level-based points
+                const points = question.level * 1000;
+                user.score += points;
+                // Save the updated user state
                 yield user.save();
-                res.status(200).json({ message: 'Correct answer' });
+                // Check if the user has completed all questions for the current level
+                const totalQuestionsForLevel = yield Question_1.default.countDocuments({ level: question.level });
+                if (user.currentQuestionIndex + 1 >= totalQuestionsForLevel) {
+                    user.currentQuestionIndex = 0; // Reset for next level
+                    yield user.save();
+                    return res.status(200).json({
+                        message: 'Level completed! Proceeding to the next level.',
+                        nextLevel: question.level + 1,
+                        currentQuestionIndex: user.currentQuestionIndex,
+                        score: user.score // Include updated score in response
+                    });
+                }
+                else {
+                    user.currentQuestionIndex += 1;
+                }
+                yield user.save();
+                res.status(200).json({
+                    message: 'Correct answer',
+                    currentQuestionIndex: user.currentQuestionIndex,
+                    score: user.score // Include updated score in response
+                });
             }
             catch (error) {
+                console.error('Error answering question:', error);
                 res.status(500).json({ message: 'Error answering question', error });
+            }
+        });
+    }
+    // Method to reset lifelines
+    resetLifelines(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            if (!userId) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+            try {
+                const user = yield User_1.default.findById(userId);
+                if (!user) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
+                user.lifelinesUsed = new Map(); // Reset lifelines used
+                yield user.save();
+                res.status(200).json({ message: 'Lifelines reset successfully' });
+            }
+            catch (error) {
+                console.error('Error resetting lifelines:', error);
+                res.status(500).json({ message: 'Failed to reset lifelines. Please try again later.' });
             }
         });
     }

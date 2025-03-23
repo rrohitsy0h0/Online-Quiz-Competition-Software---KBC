@@ -18,7 +18,25 @@ const StartQuiz: React.FC = () => {
     const [error, setError] = useState('');
     const [timeLeft, setTimeLeft] = useState(45); // Initialize time limit to 45 seconds
     const [currentLevel, setCurrentLevel] = useState(1); // Track the current level
+    const [score, setScore] = useState(0); // Track the current score
     const navigate = useNavigate();
+
+    const resetLifelines = async () => {
+        try {
+            const token = localStorage.getItem('token'); // Get token from localStorage
+            await api.post('/questions/reset-lifelines', {}, {
+                headers: { Authorization: `Bearer ${token}` }, // Add Authorization header
+            });
+            console.log('Lifelines reset successfully'); // Debugging log
+        } catch (err: any) {
+            console.error('Error resetting lifelines:', err.response?.data || err.message);
+            setError('Failed to reset lifelines. Please try again later.');
+        }
+    };
+
+    useEffect(() => {
+        resetLifelines(); // Reset lifelines when the quiz starts
+    }, []);
 
     useEffect(() => {
         const fetchQuestions = async () => {
@@ -40,7 +58,9 @@ const StartQuiz: React.FC = () => {
 
     useEffect(() => {
         if (questions.length > 0) {
-            setTimeLeft(45); // Reset time limit for each question
+            const currentQuestion = questions[currentQuestionIndex];
+            setTimeLeft(currentQuestion.timeLimit); // Dynamically set time limit based on the current question
+
             const timer = setInterval(() => {
                 setTimeLeft((prevTime) => {
                     if (prevTime <= 1) {
@@ -63,43 +83,61 @@ const StartQuiz: React.FC = () => {
         }
 
         try {
-            const token = localStorage.getItem('token'); // Get token from localStorage
-            console.log('Token:', token); // Debugging log
+            const token = localStorage.getItem('token');
             const currentQuestion = questions[currentQuestionIndex];
-            console.log('Submitting Answer:', selectedAnswer); // Debugging log
             const response = await api.post('/questions/answer', {
                 questionId: currentQuestion._id,
                 answer: selectedAnswer,
             }, {
-                headers: { Authorization: `Bearer ${token}` }, // Ensure token is included
+                headers: { Authorization: `Bearer ${token}` },
             });
 
-            if (response.data.message === 'Correct answer') {
-                // If the answer is correct and there are no more questions in the current level
-                if (currentQuestionIndex + 1 >= questions.length) {
-                    if (currentLevel < 5) { // Assuming there are 5 levels
-                        alert(`Level ${currentLevel} completed! Proceeding to Level ${currentLevel + 1}.`);
-                        setCurrentLevel(currentLevel + 1); // Increment level
-                        setSelectedAnswer('');
-                        setError('');
-                    } else {
-                        alert('Congratulations! You have completed all levels of the quiz.');
-                        navigate('/dashboard'); // Redirect to dashboard after completing all levels
-                    }
-                } else {
-                    // Move to the next question in the current level
-                    setCurrentQuestionIndex(currentQuestionIndex + 1);
-                    setSelectedAnswer('');
-                    setError('');
-                }
+            if (response.data.nextLevel !== undefined) {
+                alert(response.data.message);
+                setCurrentLevel(response.data.nextLevel);
+                setCurrentQuestionIndex(response.data.currentQuestionIndex); // Will be 0
+                setScore(response.data.score); // Update score from backend response
+            } else if (response.data.message === 'Correct answer') {
+                setCurrentQuestionIndex(response.data.currentQuestionIndex);
+                setScore(response.data.score); // Update score from backend response
+            }
+            setSelectedAnswer('');
+            setError('');
+        } catch (err: any) {
+            if (err.response?.status === 400 && err.response?.data?.message === 'Wrong answer. Redirecting to dashboard.') {
+                alert('Wrong answer. Redirecting to dashboard.');
+                navigate('/dashboard');
             } else {
-                // If the answer is wrong, end the quiz
-                alert('Wrong answer. Game over.');
-                navigate('/dashboard'); // Redirect to dashboard on wrong answer
+                console.error('Error submitting answer:', err.response?.data || err.message);
+                setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
+            }
+        }
+    };
+
+    const handleUseLifeline = async (lifelineType: string) => {
+        try {
+            const token = localStorage.getItem('token'); // Get token from localStorage
+            const response = await api.post('/questions/lifeline', {
+                lifelineType,
+                questionId: questions[currentQuestionIndex]._id,
+            }, {
+                headers: { Authorization: `Bearer ${token}` }, // Add Authorization header
+            });
+
+            const { result } = response.data;
+            if (lifelineType === '5050') {
+                // Update the current question's options to only include the remaining options
+                const updatedQuestions = [...questions];
+                updatedQuestions[currentQuestionIndex].options = result;
+                setQuestions(updatedQuestions);
             }
         } catch (err: any) {
-            console.error('Error submitting answer:', err.response?.data || err.message);
-            setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
+            console.error('Error using lifeline:', err.response?.data || err.message);
+            if (err.response?.data?.message === 'Lifeline already used') {
+                setError('This lifeline has already been used.');
+            } else {
+                setError(err.response?.data?.message || 'Failed to use lifeline. Please try again.');
+            }
         }
     };
 
@@ -111,9 +149,12 @@ const StartQuiz: React.FC = () => {
 
     return (
         <div style={styles.container}>
+            <div style={styles.timerContainer}>
+                <p style={styles.timer}>Time Left: {timeLeft} seconds</p>
+            </div>
             <h1 style={styles.title}>Quiz</h1>
             <p style={styles.level}>Level: {currentLevel}</p>
-            <p style={styles.timer}>Time Left: {timeLeft} seconds</p>
+            <p style={styles.score}>Score: {score}</p> {/* Display current score */}
             <p style={styles.question}>{currentQuestion.questionText}</p>
             <div style={styles.optionsContainer}>
                 {currentQuestion.options.map((option, index) => (
@@ -131,6 +172,12 @@ const StartQuiz: React.FC = () => {
             </div>
             {error && <p style={styles.error}>{error}</p>}
             <button onClick={handleAnswerSubmit} style={styles.button}>Submit Answer</button>
+            <div style={styles.lifelineContainer}>
+                <button onClick={() => handleUseLifeline('5050')} style={styles.lifelineButton}>50:50</button>
+                <button onClick={() => handleUseLifeline('phoneAFriend')} style={styles.lifelineButton}>Phone a Friend</button>
+                <button onClick={() => handleUseLifeline('audiencePoll')} style={styles.lifelineButton}>Audience Poll</button>
+                <button onClick={() => handleUseLifeline('changeQuestion')} style={styles.lifelineButton}>Flip the Question</button>
+            </div>
         </div>
     );
 };
@@ -144,6 +191,15 @@ const styles = {
         textAlign: 'center' as const,
         position: 'relative' as const,
     },
+    timerContainer: {
+        position: 'absolute' as const,
+        top: '10px',
+        right: '10px',
+    },
+    timer: {
+        fontSize: '1.2rem',
+        color: 'red',
+    },
     title: {
         fontSize: '2rem',
         color: '#333',
@@ -154,12 +210,10 @@ const styles = {
         color: '#555',
         marginBottom: '10px',
     },
-    timer: {
-        position: 'absolute' as const,
-        bottom: '10px',
-        right: '10px',
+    score: {
         fontSize: '1.2rem',
-        color: 'red',
+        color: '#333',
+        marginBottom: '10px',
     },
     question: {
         fontSize: '1.2rem',
@@ -185,11 +239,27 @@ const styles = {
         border: 'none',
         borderRadius: '5px',
         cursor: 'pointer',
+        marginBottom: '20px',
     },
     error: {
         color: 'red',
         fontSize: '0.9rem',
         marginBottom: '20px',
+    },
+    lifelineContainer: {
+        display: 'flex',
+        justifyContent: 'center' as const,
+        gap: '10px',
+        marginTop: '20px',
+    },
+    lifelineButton: {
+        padding: '10px 15px',
+        fontSize: '0.9rem',
+        color: '#fff',
+        backgroundColor: '#28a745',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
     },
 };
 

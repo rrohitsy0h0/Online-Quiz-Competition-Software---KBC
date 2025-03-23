@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import api from '../services/api';
 
 interface LeaderboardEntry {
@@ -10,6 +11,7 @@ interface LeaderboardEntry {
 const Leaderboard: React.FC = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [error, setError] = useState('');
+    const navigate = useNavigate(); // Initialize useNavigate
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
@@ -27,6 +29,9 @@ const Leaderboard: React.FC = () => {
 
     return (
         <div style={styles.container}>
+            <button onClick={() => navigate('/dashboard')} style={styles.backButton}>
+                Back to Dashboard
+            </button>
             <h1 style={styles.title}>Leaderboard</h1>
             {error && <p style={styles.error}>{error}</p>}
             <table style={styles.table}>
@@ -60,6 +65,19 @@ const styles = {
         padding: '20px',
         fontFamily: 'Arial, sans-serif',
         textAlign: 'center' as const,
+        position: 'relative' as const,
+    },
+    backButton: {
+        position: 'absolute' as const,
+        top: '10px',
+        left: '10px',
+        padding: '10px 15px',
+        fontSize: '0.9rem',
+        color: '#fff',
+        backgroundColor: '#007BFF',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
     },
     title: {
         fontSize: '2rem',

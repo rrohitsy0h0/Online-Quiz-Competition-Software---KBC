@@ -25,22 +25,6 @@ const questions = [
         level: 1,
         timeLimit: 30,
     },
-    {
-        questionText: "What is 2 + 2?",
-        options: ["3", "4", "5", "6"],
-        correctAnswer: "4",
-        level: 1,
-        timeLimit: 30,
-    },
-    // Add 8 more questions for level 1
-    {
-        questionText: "What is the largest planet in our solar system?",
-        options: ["Earth", "Mars", "Jupiter", "Saturn"],
-        correctAnswer: "Jupiter",
-        level: 1,
-        timeLimit: 30,
-    },
-    // ... Add more questions for level 1 ...
     // Level 2
     {
         questionText: "What is the chemical symbol for water?",
@@ -49,22 +33,6 @@ const questions = [
         level: 2,
         timeLimit: 30,
     },
-    {
-        questionText: "Who wrote 'Romeo and Juliet'?",
-        options: ["William Shakespeare", "Charles Dickens", "Mark Twain", "Jane Austen"],
-        correctAnswer: "William Shakespeare",
-        level: 2,
-        timeLimit: 30,
-    },
-    // Add 8 more questions for level 2
-    {
-        questionText: "What is the square root of 64?",
-        options: ["6", "7", "8", "9"],
-        correctAnswer: "8",
-        level: 2,
-        timeLimit: 30,
-    },
-    // ... Add more questions for level 2 ...
     // Level 3
     {
         questionText: "What is the capital of Japan?",
@@ -74,23 +42,6 @@ const questions = [
         timeLimit: 30,
     },
     {
-        questionText: "What is the speed of light?",
-        options: ["300,000 km/s", "150,000 km/s", "450,000 km/s", "600,000 km/s"],
-        correctAnswer: "300,000 km/s",
-        level: 3,
-        timeLimit: 30,
-    },
-    // Add 8 more questions for level 3
-    {
-        questionText: "Who painted the Mona Lisa?",
-        options: ["Leonardo da Vinci", "Vincent van Gogh", "Pablo Picasso", "Claude Monet"],
-        correctAnswer: "Leonardo da Vinci",
-        level: 3,
-        timeLimit: 30,
-    },
-    // ... Add more questions for level 3 ...
-    // Repeat similar structure for levels 4 to 16
-    {
         questionText: "What is the capital of Italy?",
         options: ["Rome", "Venice", "Milan", "Florence"],
         correctAnswer: "Rome",
@@ -98,13 +49,89 @@ const questions = [
         timeLimit: 30,
     },
     {
-        questionText: "What is the boiling point of water in Celsius?",
-        options: ["90°C", "100°C", "110°C", "120°C"],
-        correctAnswer: "100°C",
-        level: 4,
+        questionText: "Which planet is known as the 'Red Planet'?",
+        options: ["Mars", "Venus", "Jupiter", "Saturn"],
+        correctAnswer: "Mars",
+        level: 5,
         timeLimit: 30,
     },
-    // Add more questions for levels 4 to 16...
+    {
+        questionText: "What is the chemical symbol for gold?",
+        options: ["Au", "Ag", "Fe", "Cu"],
+        correctAnswer: "Au",
+        level: 6,
+        timeLimit: 45,
+    },
+    {
+        questionText: "Who wrote 'Romeo and Juliet'?",
+        options: ["William Shakespeare", "Jane Austen", "Charles Dickens", "Mark Twain"],
+        correctAnswer: "William Shakespeare",
+        level: 7,
+        timeLimit: 45,
+    },
+    {
+        questionText: "What is the largest ocean on Earth?",
+        options: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
+        correctAnswer: "Pacific Ocean",
+        level: 8,
+        timeLimit: 45,
+    },
+    {
+        questionText: "What is the square root of 144?",
+        options: ["12", "10", "14", "16"],
+        correctAnswer: "12",
+        level: 9,
+        timeLimit: 45,
+    },
+    {
+        questionText: "Which country is known as the 'Land of the Rising Sun'?",
+        options: ["Japan", "China", "Korea", "Vietnam"],
+        correctAnswer: "Japan",
+        level: 10,
+        timeLimit: 45,
+    },
+    {
+        questionText: "What is the largest mammal?",
+        options: ["Blue Whale", "Elephant", "Giraffe", "Hippopotamus"],
+        correctAnswer: "Blue Whale",
+        level: 11,
+        timeLimit: 0, // 0 indicates no time limit
+    },
+    {
+        questionText: "In which year did the Titanic sink?",
+        options: ["1912", "1920", "1905", "1931"],
+        correctAnswer: "1912",
+        level: 12,
+        timeLimit: 0, // 0 indicates no time limit
+    },
+    {
+        questionText: "What is the value of pi (π) to two decimal places?",
+        options: ["3.14", "3.16", "3.12", "3.18"],
+        correctAnswer: "3.14",
+        level: 13,
+        timeLimit: 0, // 0 indicates no time limit
+    },
+    {
+        questionText: "Which gas makes up the majority of Earth's atmosphere?",
+        options: ["Nitrogen", "Oxygen", "Carbon Dioxide", "Argon"],
+        correctAnswer: "Nitrogen",
+        level: 14,
+        timeLimit: 0, // 0 indicates no time limit
+    },
+    {
+        questionText: "What is the capital of Australia?",
+        options: ["Canberra", "Sydney", "Melbourne", "Brisbane"],
+        correctAnswer: "Canberra",
+        level: 15,
+        timeLimit: 0, // 0 indicates no time limit
+    },
+    {
+        questionText: "Who painted the Mona Lisa?",
+        options: ["Leonardo da Vinci", "Michelangelo", "Raphael", "Donatello"],
+        correctAnswer: "Leonardo da Vinci",
+        level: 16,
+        timeLimit: 0, // 0 indicates no time limit
+    },
 ];
 const seedQuestions = () => __awaiter(void 0, void 0, void 0, function* () {
     try {

@@ -19,8 +19,14 @@ const userSchema = new mongoose.Schema({
         default: 0, // Tracks the current question index
     },
     lifelinesUsed: {
-        type: Number,
-        default: 0, // Tracks the number of lifelines used
+        type: Map,
+        of: Boolean, // Tracks whether a specific lifeline has been used
+        default: {
+            '5050': false,
+            'phoneAFriend': false,
+            'audiencePoll': false,
+            'changeQuestion': false,
+        },
     },
     timeTaken: {
         type: Number,
