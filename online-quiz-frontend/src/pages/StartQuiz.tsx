@@ -18,7 +18,6 @@ const StartQuiz: React.FC = () => {
     const [error, setError] = useState('');
     const [timeLeft, setTimeLeft] = useState(45); // Initialize time limit to 45 seconds
     const [currentLevel, setCurrentLevel] = useState(1); // Track the current level
-    const [score, setScore] = useState(0); // Track the current score
     const navigate = useNavigate();
 
     const resetLifelines = async () => {
@@ -93,20 +92,17 @@ const StartQuiz: React.FC = () => {
             });
 
             if (response.data.nextLevel !== undefined) {
-                alert(response.data.message);
-                setCurrentLevel(response.data.nextLevel);
-                setCurrentQuestionIndex(response.data.currentQuestionIndex); // Will be 0
-                setScore(response.data.score); // Update score from backend response
+                setCurrentLevel(response.data.nextLevel); // Move to the next level
+                setCurrentQuestionIndex(0); // Reset to the first question of the next level
             } else if (response.data.message === 'Correct answer') {
-                setCurrentQuestionIndex(response.data.currentQuestionIndex);
-                setScore(response.data.score); // Update score from backend response
+                setCurrentQuestionIndex((prevIndex) => prevIndex + 1); // Move to the next question
             }
+
             setSelectedAnswer('');
             setError('');
         } catch (err: any) {
             if (err.response?.status === 400 && err.response?.data?.message === 'Wrong answer. Redirecting to dashboard.') {
-                alert('Wrong answer. Redirecting to dashboard.');
-                navigate('/dashboard');
+                navigate('/dashboard'); // Redirect to dashboard on wrong answer
             } else {
                 console.error('Error submitting answer:', err.response?.data || err.message);
                 setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
@@ -154,7 +150,6 @@ const StartQuiz: React.FC = () => {
             </div>
             <h1 style={styles.title}>Quiz</h1>
             <p style={styles.level}>Level: {currentLevel}</p>
-            <p style={styles.score}>Score: {score}</p> {/* Display current score */}
             <p style={styles.question}>{currentQuestion.questionText}</p>
             <div style={styles.optionsContainer}>
                 {currentQuestion.options.map((option, index) => (
@@ -208,11 +203,6 @@ const styles = {
     level: {
         fontSize: '1.2rem',
         color: '#555',
-        marginBottom: '10px',
-    },
-    score: {
-        fontSize: '1.2rem',
-        color: '#333',
         marginBottom: '10px',
     },
     question: {
