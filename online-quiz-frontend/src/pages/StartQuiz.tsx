@@ -99,11 +99,9 @@ const StartQuiz: React.FC = () => {
             }, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
-            if (response.data.nextLevel !== undefined) {
-                setCurrentLevel(response.data.nextLevel); // Move to the next level
-            }
-
+            
+            // Instead of relying on response.nextLevel, manually increment the level
+            setCurrentLevel(currentQuestion.level + 1);
             setSelectedAnswer('');
             setError('');
         } catch (err: any) {

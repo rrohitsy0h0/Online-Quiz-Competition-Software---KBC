@@ -249,25 +249,22 @@ class QuestionController {
                 return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
             }
 
-            // Increment score for correct answer using level-based points
+            // Correct answer: update user's score using level-based points
             const points = question.level * 1000;
             user.score += points;
 
-            // Always move to the next level immediately on correct answer
+            // Always move to the next level
             const nextLevel = question.level + 1;
-            
-            // Reset for next level
-            user.currentQuestionIndex = 0; 
+            // Reset currentQuestionIndex (if used elsewhere)
+            user.currentQuestionIndex = 0;
             await user.save();
-            
-            // Return the next level in the response
+
+            console.log(`User ${user.username} answered correctly. Moving to level ${nextLevel}.`);
             return res.status(200).json({
                 message: 'Correct answer! Moving to next level.',
                 nextLevel: nextLevel,
-                currentQuestionIndex: user.currentQuestionIndex,
                 score: user.score
             });
-
         } catch (error) {
             console.error('Error answering question:', error);
             res.status(500).json({ message: 'Error answering question', error });
