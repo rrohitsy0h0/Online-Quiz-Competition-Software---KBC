@@ -19,6 +19,12 @@ const StartQuiz: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState(45);
     const [currentLevel, setCurrentLevel] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [usedLifelines, setUsedLifelines] = useState<Record<string, boolean>>({
+        '5050': false,
+        'audiencePoll': false,
+        'changeQuestion': false,
+        'showAnswer': false,
+    });
     const navigate = useNavigate();
 
     const resetLifelines = async () => {
@@ -28,6 +34,14 @@ const StartQuiz: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             console.log('Lifelines reset successfully');
+            
+            // Reset local lifeline state
+            setUsedLifelines({
+                '5050': false,
+                'audiencePoll': false,
+                'changeQuestion': false,
+                'showAnswer': false,
+            });
         } catch (err: any) {
             console.error('Error resetting lifelines:', err.response?.data || err.message);
             setError('Failed to reset lifelines. Please try again later.');
@@ -116,10 +130,70 @@ const StartQuiz: React.FC = () => {
 
     const handleUseLifeline = async (lifelineType: string) => {
         if (!currentQuestion) return;
+        
+        // Check if the lifeline has already been used
+        if (usedLifelines[lifelineType]) {
+            setError('This lifeline has already been used.');
+            return;
+        }
 
         try {
-            console.log(`Using lifeline: ${lifelineType}`);
+            console.log(`Using lifeline: ${lifelineType} for question ID: ${currentQuestion._id}`);
             
+            // Special case for "changeQuestion" - directly fetch a new question
+            if (lifelineType === 'changeQuestion') {
+                // Fetch all questions for the current level
+                const token = localStorage.getItem('token');
+                const getAllResponse = await api.get(`/questions?level=${currentLevel}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                if (getAllResponse.data && getAllResponse.data.length > 0) {
+                    // Filter out the current question
+                    const otherQuestions = getAllResponse.data.filter(
+                        (q: Question) => q._id !== currentQuestion._id
+                    );
+                    
+                    if (otherQuestions.length === 0) {
+                        setError('No alternative questions available for this level.');
+                        return;
+                    }
+                    
+                    // Select a random question from available alternatives
+                    const randomIndex = Math.floor(Math.random() * otherQuestions.length);
+                    const newQuestion = otherQuestions[randomIndex];
+                    
+                    console.log('Changing to new question:', newQuestion);
+                    
+                    // IMPORTANT: Mark the lifeline as used BEFORE changing the question
+                    // This ensures the state update happens before UI re-renders
+                    setUsedLifelines(prev => ({
+                        ...prev,
+                        [lifelineType]: true
+                    }));
+                    
+                    // Now update the question
+                    setCurrentQuestion(newQuestion);
+                    setTimeLeft(newQuestion.timeLimit);
+                    setSelectedAnswer('');
+                    
+                    // Mark lifeline as used on the server
+                    await api.post('/questions/lifeline', {
+                        lifelineType,
+                        questionId: currentQuestion._id, // Send original question ID
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    
+                    console.log(`Lifeline ${lifelineType} marked as used:`, true);
+                    return;
+                } else {
+                    setError('No questions available for this level.');
+                    return;
+                }
+            }
+            
+            // For other lifelines, use the normal approach
             const token = localStorage.getItem('token');
             const response = await api.post('/questions/lifeline', {
                 lifelineType,
@@ -129,26 +203,34 @@ const StartQuiz: React.FC = () => {
             });
 
             console.log('Lifeline response:', response.data);
+            
+            // IMPORTANT: Mark the lifeline as used BEFORE updating UI
+            setUsedLifelines(prev => ({
+                ...prev,
+                [lifelineType]: true
+            }));
 
             const { result } = response.data;
             if (lifelineType === '5050') {
-                // Update the current question's options
                 setCurrentQuestion({
                     ...currentQuestion,
                     options: result
                 });
             } else if (lifelineType === 'showAnswer') {
                 alert(`The correct answer is: ${result}`);
-            } else if (lifelineType === 'changeQuestion') {
-                // Replace the current question with a new one
-                setCurrentQuestion(result);
-                setTimeLeft(result.timeLimit);
-                setSelectedAnswer('');
             }
+            
+            console.log('Used lifelines after update:', {...usedLifelines, [lifelineType]: true});
         } catch (err: any) {
-            console.error('Error using lifeline:', err.response?.data || err.message);
+            console.error('Error details:', err.response?.data);
             if (err.response?.data?.message === 'Lifeline already used') {
                 setError('This lifeline has already been used.');
+                
+                // Update local state to reflect this lifeline is used
+                setUsedLifelines(prev => ({
+                    ...prev,
+                    [lifelineType]: true
+                }));
             } else if (err.response?.data?.message === 'No alternative questions available for this level.') {
                 setError('No alternative questions available for this level.');
             } else {
@@ -156,6 +238,11 @@ const StartQuiz: React.FC = () => {
             }
         }
     };
+
+    // Add debugging to see if usedLifelines is updating correctly
+    useEffect(() => {
+        console.log('Used lifelines updated:', usedLifelines);
+    }, [usedLifelines]);
 
     if (loading) {
         return (
@@ -206,10 +293,34 @@ const StartQuiz: React.FC = () => {
                 {error && <p style={styles.error}>{error}</p>}
                 <button onClick={handleAnswerSubmit} style={styles.button}>Submit Answer</button>
                 <div style={styles.lifelineContainer}>
-                    <button onClick={() => handleUseLifeline('5050')} style={styles.lifelineButton}>50:50</button>
-                    <button onClick={() => handleUseLifeline('audiencePoll')} style={styles.lifelineButton}>Audience Poll</button>
-                    <button onClick={() => handleUseLifeline('changeQuestion')} style={styles.lifelineButton}>Flip the Question</button>
-                    <button onClick={() => handleUseLifeline('showAnswer')} style={styles.lifelineButton}>Show Answer</button>
+                    <button 
+                        onClick={() => handleUseLifeline('5050')} 
+                        style={usedLifelines['5050'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
+                        disabled={usedLifelines['5050']}
+                    >
+                        50:50
+                    </button>
+                    <button 
+                        onClick={() => handleUseLifeline('audiencePoll')} 
+                        style={usedLifelines['audiencePoll'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
+                        disabled={usedLifelines['audiencePoll']}
+                    >
+                        Audience Poll
+                    </button>
+                    <button 
+                        onClick={() => handleUseLifeline('changeQuestion')} 
+                        style={usedLifelines['changeQuestion'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
+                        disabled={usedLifelines['changeQuestion']}
+                    >
+                        Flip the Question
+                    </button>
+                    <button 
+                        onClick={() => handleUseLifeline('showAnswer')} 
+                        style={usedLifelines['showAnswer'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
+                        disabled={usedLifelines['showAnswer']}
+                    >
+                        Show Answer
+                    </button>
                 </div>
             </div>
         </>
@@ -289,6 +400,11 @@ const styles = {
         border: 'none',
         borderRadius: '5px',
         cursor: 'pointer',
+    },
+    disabledLifeline: {
+        backgroundColor: '#cccccc',
+        cursor: 'not-allowed',
+        opacity: 0.6,
     },
 };
 
