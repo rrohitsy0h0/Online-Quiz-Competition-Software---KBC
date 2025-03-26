@@ -68,8 +68,17 @@ const StartQuiz: React.FC = () => {
                     setCurrentQuestion(question);
                     setTimeLeft(question.timeLimit);
                 } else {
-                    alert("Congratulations! You've completed all levels!");
-                    navigate('/dashboard');
+                    // No questions found for this level
+                    console.log(`No questions found for level ${currentLevel}`);
+                    
+                    // If we're at level 1 and no questions found, show error
+                    if (currentLevel === 1) {
+                        setError('No questions available. Please contact the administrator.');
+                    } else {
+                        // Otherwise, we've completed all levels
+                        alert("Congratulations! You've completed all levels!");
+                        navigate('/dashboard');
+                    }
                 }
             } catch (err: any) {
                 console.error('Error fetching question:', err.response?.data || err.message);
@@ -84,18 +93,28 @@ const StartQuiz: React.FC = () => {
 
     useEffect(() => {
         if (currentQuestion) {
-            const timer = setInterval(() => {
-                setTimeLeft((prevTime) => {
-                    if (prevTime <= 1) {
-                        clearInterval(timer);
-                        alert('Time is up! Game over.');
-                        navigate('/dashboard');
-                    }
-                    return prevTime - 1;
-                });
-            }, 1000);
+            // Check if time is very large (unlimited)
+            const isUnlimitedTime = currentQuestion.timeLimit >= 999000;
+            
+            if (!isUnlimitedTime) {
+                setTimeLeft(currentQuestion.timeLimit);
+                
+                const timer = setInterval(() => {
+                    setTimeLeft((prevTime) => {
+                        if (prevTime <= 1) {
+                            clearInterval(timer);
+                            alert('Time is up! Game over.');
+                            navigate('/dashboard');
+                        }
+                        return prevTime - 1;
+                    });
+                }, 1000);
 
-            return () => clearInterval(timer);
+                return () => clearInterval(timer);
+            } else {
+                // Set timeLeft to "Unlimited" or a very large number
+                setTimeLeft(Infinity);
+            }
         }
     }, [currentQuestion, navigate]);
 
@@ -277,7 +296,9 @@ const StartQuiz: React.FC = () => {
             <Header />
             <div style={styles.container}>
                 <div style={styles.timerContainer}>
-                    <p style={styles.timer}>Time Left: {timeLeft} seconds</p>
+                    <p style={styles.timer}>
+                        Time Left: {timeLeft === Infinity || timeLeft >= 999000 ? 'Unlimited' : `${timeLeft} seconds`}
+                    </p>
                 </div>
                 <h1 style={styles.title}>Quiz</h1>
                 <p style={styles.level}>Level: {currentLevel}</p>

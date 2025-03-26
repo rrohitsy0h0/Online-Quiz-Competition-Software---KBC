@@ -4,7 +4,7 @@ interface IQuestion extends Document {
     questionText: string;
     options: string[];
     correctAnswer: string;
-    timeLimit: number; // Time limit for the question in seconds
+    timeLimit: number | null; // Time limit for the question in seconds
     level: number; // Level of the question
 }
 
@@ -23,7 +23,7 @@ const questionSchema: Schema = new Schema({
     },
     timeLimit: {
         type: Number,
-        required: true,
+        required: false,
         default: 30, // Default time limit is 30 seconds
     },
     level: {

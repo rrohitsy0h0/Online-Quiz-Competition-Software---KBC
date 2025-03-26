@@ -22,7 +22,8 @@ class QuestionController {
             const { level } = req.query; // Get the level from query parameters
             try {
                 const query = level ? { level: parseInt(level, 10) } : {};
-                const questions = yield Question_1.default.find(query); // Fetch questions based on level
+                // Return all questions for the level (remove .limit(1))
+                const questions = yield Question_1.default.find(query);
                 res.status(200).json(questions);
             }
             catch (error) {
@@ -97,6 +98,7 @@ class QuestionController {
             var _a;
             const { lifelineType, questionId } = req.body;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            console.log(`Lifeline requested: ${lifelineType}, Question ID: ${questionId}`); // Add this debug log
             if (!userId) {
                 return res.status(401).json({ message: 'Unauthorized' });
             }
@@ -115,12 +117,40 @@ class QuestionController {
                 }
                 let lifelineResult;
                 if (lifelineType === '5050') {
-                    // Changed: For 50:50, select one random incorrect option so result has 2 options in total
+                    // For 50:50, select one random incorrect option so result has 2 options in total
                     const incorrectOptions = question.options.filter(opt => opt !== question.correctAnswer);
                     const randomIncorrectOption = incorrectOptions.sort(() => 0.5 - Math.random()).slice(0, 1);
                     lifelineResult = [question.correctAnswer, ...randomIncorrectOption].sort(() => 0.5 - Math.random());
                 }
+                else if (lifelineType === 'showAnswer') {
+                    // For Show Answer lifeline, simply return the correct answer
+                    lifelineResult = question.correctAnswer;
+                }
+                else if (lifelineType === 'changeQuestion') {
+                    console.log('Processing changeQuestion lifeline'); // Add this debug log
+                    // For Flip the Question lifeline, get a different random question of the same level
+                    const currentLevel = question.level;
+                    console.log(`Finding alternative questions for level ${currentLevel}`); // Add this debug log
+                    // Find all questions of the current level except the current question
+                    const availableQuestions = yield Question_1.default.find({
+                        level: currentLevel,
+                        _id: { $ne: questionId }
+                    });
+                    console.log(`Found ${availableQuestions.length} alternative questions`); // Add this debug log
+                    if (availableQuestions.length === 0) {
+                        return res.status(400).json({
+                            message: 'No alternative questions available for this level.'
+                        });
+                    }
+                    // Select a random question from the available questions
+                    const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+                    const newQuestion = availableQuestions[randomIndex];
+                    console.log(`Selected new question: ${newQuestion._id}`); // Add this debug log
+                    // Return the new question as the result
+                    lifelineResult = newQuestion;
+                }
                 else {
+                    console.log(`Unrecognized lifeline type: ${lifelineType}`); // Add this debug log
                     return res.status(400).json({ message: 'Invalid lifeline type' });
                 }
                 // Mark the lifeline as used
@@ -213,31 +243,19 @@ class QuestionController {
                 if (question.correctAnswer !== answer) {
                     return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
                 }
-                // Increment score for correct answer using level-based points
+                // Correct answer: update user's score using level-based points
                 const points = question.level * 1000;
                 user.score += points;
-                // Save the updated user state
+                // Always move to the next level
+                const nextLevel = question.level + 1;
+                // Reset currentQuestionIndex (if used elsewhere)
+                user.currentQuestionIndex = 0;
                 yield user.save();
-                // Check if the user has completed all questions for the current level
-                const totalQuestionsForLevel = yield Question_1.default.countDocuments({ level: question.level });
-                if (user.currentQuestionIndex + 1 >= totalQuestionsForLevel) {
-                    user.currentQuestionIndex = 0; // Reset for next level
-                    yield user.save();
-                    return res.status(200).json({
-                        message: 'Level completed! Proceeding to the next level.',
-                        nextLevel: question.level + 1,
-                        currentQuestionIndex: user.currentQuestionIndex,
-                        score: user.score // Include updated score in response
-                    });
-                }
-                else {
-                    user.currentQuestionIndex += 1;
-                }
-                yield user.save();
-                res.status(200).json({
-                    message: 'Correct answer',
-                    currentQuestionIndex: user.currentQuestionIndex,
-                    score: user.score // Include updated score in response
+                console.log(`User ${user.username} answered correctly. Moving to level ${nextLevel}.`);
+                return res.status(200).json({
+                    message: 'Correct answer! Moving to next level.',
+                    nextLevel: nextLevel,
+                    score: user.score
                 });
             }
             catch (error) {

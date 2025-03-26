@@ -25,6 +25,20 @@ const questions = [
         level: 1,
         timeLimit: 30,
     },
+    {
+        questionText: "What is the largest country in the world by area?",
+        options: ["Russia", "China", "United States", "Canada"],
+        correctAnswer: "Russia",
+        level: 1,
+        timeLimit: 30,
+    },
+    {
+        questionText: "Which planet is closest to the sun?",
+        options: ["Mercury", "Venus", "Earth", "Mars"],
+        correctAnswer: "Mercury",
+        level: 1,
+        timeLimit: 30,
+    },
     // Level 2
     {
         questionText: "What is the chemical symbol for water?",
@@ -95,42 +109,42 @@ const questions = [
         options: ["Blue Whale", "Elephant", "Giraffe", "Hippopotamus"],
         correctAnswer: "Blue Whale",
         level: 11,
-        timeLimit: 0, // 0 indicates no time limit
+        timeLimit: 999999, // Very large number for unlimited time
     },
     {
         questionText: "In which year did the Titanic sink?",
         options: ["1912", "1920", "1905", "1931"],
         correctAnswer: "1912",
         level: 12,
-        timeLimit: 0, // 0 indicates no time limit
+        timeLimit: 999999, // Very large number for unlimited time
     },
     {
         questionText: "What is the value of pi (π) to two decimal places?",
         options: ["3.14", "3.16", "3.12", "3.18"],
         correctAnswer: "3.14",
         level: 13,
-        timeLimit: 0, // 0 indicates no time limit
+        timeLimit: 999999, // Very large number for unlimited time
     },
     {
         questionText: "Which gas makes up the majority of Earth's atmosphere?",
         options: ["Nitrogen", "Oxygen", "Carbon Dioxide", "Argon"],
         correctAnswer: "Nitrogen",
         level: 14,
-        timeLimit: 0, // 0 indicates no time limit
+        timeLimit: 999999, // Very large number for unlimited time
     },
     {
         questionText: "What is the capital of Australia?",
         options: ["Canberra", "Sydney", "Melbourne", "Brisbane"],
         correctAnswer: "Canberra",
         level: 15,
-        timeLimit: 0, // 0 indicates no time limit
+        timeLimit: 999999, // Very large number for unlimited time
     },
     {
         questionText: "Who painted the Mona Lisa?",
         options: ["Leonardo da Vinci", "Michelangelo", "Raphael", "Donatello"],
         correctAnswer: "Leonardo da Vinci",
         level: 16,
-        timeLimit: 0, // 0 indicates no time limit
+        timeLimit: 999999, // Very large number for unlimited time
     },
 ];
 const seedQuestions = () => __awaiter(void 0, void 0, void 0, function* () {

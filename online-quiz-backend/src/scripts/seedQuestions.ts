@@ -105,42 +105,42 @@ const questions = [
     options: ["Blue Whale", "Elephant", "Giraffe", "Hippopotamus"],
     correctAnswer: "Blue Whale",
     level: 11,
-    timeLimit: 0, // 0 indicates no time limit
+    timeLimit: 999999, // Very large number for unlimited time
   },
   {
     questionText: "In which year did the Titanic sink?",
     options: ["1912", "1920", "1905", "1931"],
     correctAnswer: "1912",
     level: 12,
-    timeLimit: 0,  // 0 indicates no time limit
+    timeLimit: 999999, // Very large number for unlimited time
   },
   {
     questionText: "What is the value of pi (π) to two decimal places?",
     options: ["3.14", "3.16", "3.12", "3.18"],
     correctAnswer: "3.14",
     level: 13,
-    timeLimit: 0, // 0 indicates no time limit
+    timeLimit: 999999, // Very large number for unlimited time
   },
   {
     questionText: "Which gas makes up the majority of Earth's atmosphere?",
     options: ["Nitrogen", "Oxygen", "Carbon Dioxide", "Argon"],
     correctAnswer: "Nitrogen",
     level: 14,
-    timeLimit: 0, // 0 indicates no time limit
+    timeLimit: 999999, // Very large number for unlimited time
   },
   {
     questionText: "What is the capital of Australia?",
     options: ["Canberra", "Sydney", "Melbourne", "Brisbane"],
     correctAnswer: "Canberra",
     level: 15,
-    timeLimit: 0, // 0 indicates no time limit
+    timeLimit: 999999, // Very large number for unlimited time
   },
   {
     questionText: "Who painted the Mona Lisa?",
     options: ["Leonardo da Vinci", "Michelangelo", "Raphael", "Donatello"],
     correctAnswer: "Leonardo da Vinci",
     level: 16,
-    timeLimit: 0, // 0 indicates no time limit
+    timeLimit: 999999, // Very large number for unlimited time
   },
   
   

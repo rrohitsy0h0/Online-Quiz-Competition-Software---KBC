@@ -49,7 +49,7 @@ const questionSchema = new mongoose_1.Schema({
     },
     timeLimit: {
         type: Number,
-        required: true,
+        required: false,
         default: 30, // Default time limit is 30 seconds
     },
     level: {
