@@ -13,9 +13,21 @@ const questions = [
     level: 1,
     timeLimit: 30,
   },
+  {
+    questionText: "What is the largest country in the world by area?",
+    options: ["Russia", "China", "United States", "Canada"],
+    correctAnswer: "Russia",
+    level: 1,
+    timeLimit: 30,
+  },
+  {
+    questionText: "Which planet is closest to the sun?",
+    options: ["Mercury", "Venus", "Earth", "Mars"],
+    correctAnswer: "Mercury",
+    level: 1,
+    timeLimit: 30,
+  },
   
-  
-
   // Level 2
   {
     questionText: "What is the chemical symbol for water?",

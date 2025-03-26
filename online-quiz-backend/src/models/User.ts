@@ -20,11 +20,12 @@ const userSchema = new mongoose.Schema({
     },
     lifelinesUsed: {
         type: Map,
-        of: Boolean, // Tracks whether a specific lifeline has been used
+        of: Boolean,
         default: {
             '5050': false,
             'audiencePoll': false,
-            'changeQuestion': false,
+            'changeQuestion': false, // This should match exactly
+            'showAnswer': false,
         },
     },
     timeTaken: {

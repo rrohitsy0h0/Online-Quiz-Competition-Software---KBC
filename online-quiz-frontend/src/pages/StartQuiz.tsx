@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import Header from '../components/Header';
 
 interface Question {
     _id: string;
@@ -112,13 +113,17 @@ const StartQuiz: React.FC = () => {
 
     const handleUseLifeline = async (lifelineType: string) => {
         try {
-            const token = localStorage.getItem('token'); // Get token from localStorage
+            console.log(`Using lifeline: ${lifelineType}`); // Add this debug log
+            
+            const token = localStorage.getItem('token');
             const response = await api.post('/questions/lifeline', {
                 lifelineType,
                 questionId: questions[currentQuestionIndex]._id,
             }, {
-                headers: { Authorization: `Bearer ${token}` }, // Add Authorization header
+                headers: { Authorization: `Bearer ${token}` },
             });
+
+            console.log('Lifeline response:', response.data); // Add this debug log
 
             const { result } = response.data;
             if (lifelineType === '5050') {
@@ -126,11 +131,27 @@ const StartQuiz: React.FC = () => {
                 const updatedQuestions = [...questions];
                 updatedQuestions[currentQuestionIndex].options = result;
                 setQuestions(updatedQuestions);
+            } else if (lifelineType === 'showAnswer') {
+                // Display the correct answer to the user
+                alert(`The correct answer is: ${result}`);
+            } else if (lifelineType === 'changeQuestion') {
+                // Replace the current question with the new question
+                const updatedQuestions = [...questions];
+                updatedQuestions[currentQuestionIndex] = result;
+                setQuestions(updatedQuestions);
+                
+                // Reset selected answer since the question changed
+                setSelectedAnswer('');
+                
+                // Reset the timer based on the new question's time limit
+                setTimeLeft(result.timeLimit);
             }
         } catch (err: any) {
             console.error('Error using lifeline:', err.response?.data || err.message);
             if (err.response?.data?.message === 'Lifeline already used') {
                 setError('This lifeline has already been used.');
+            } else if (err.response?.data?.message === 'No alternative questions available for this level.') {
+                setError('No alternative questions available for this level.');
             } else {
                 setError(err.response?.data?.message || 'Failed to use lifeline. Please try again.');
             }
@@ -138,48 +159,57 @@ const StartQuiz: React.FC = () => {
     };
 
     if (questions.length === 0) {
-        return <p>Loading questions...</p>;
+        return (
+            <>
+                <Header />
+                <p>Loading questions...</p>
+            </>
+        );
     }
 
     const currentQuestion = questions[currentQuestionIndex];
 
     return (
-        <div style={styles.container}>
-            <div style={styles.timerContainer}>
-                <p style={styles.timer}>Time Left: {timeLeft} seconds</p>
+        <>
+            <Header />
+            <div style={styles.container}>
+                <div style={styles.timerContainer}>
+                    <p style={styles.timer}>Time Left: {timeLeft} seconds</p>
+                </div>
+                <h1 style={styles.title}>Quiz</h1>
+                <p style={styles.level}>Level: {currentLevel}</p>
+                <p style={styles.question}>{currentQuestion.questionText}</p>
+                <div style={styles.optionsContainer}>
+                    {currentQuestion.options.map((option, index) => (
+                        <label key={index} style={styles.option}>
+                            <input
+                                type="radio"
+                                name="answer"
+                                value={option}
+                                checked={selectedAnswer === option}
+                                onChange={(e) => setSelectedAnswer(e.target.value)}
+                            />
+                            {option}
+                        </label>
+                    ))}
+                </div>
+                {error && <p style={styles.error}>{error}</p>}
+                <button onClick={handleAnswerSubmit} style={styles.button}>Submit Answer</button>
+                <div style={styles.lifelineContainer}>
+                    <button onClick={() => handleUseLifeline('5050')} style={styles.lifelineButton}>50:50</button>
+                    <button onClick={() => handleUseLifeline('audiencePoll')} style={styles.lifelineButton}>Audience Poll</button>
+                    <button onClick={() => handleUseLifeline('changeQuestion')} style={styles.lifelineButton}>Flip the Question</button>
+                    <button onClick={() => handleUseLifeline('showAnswer')} style={styles.lifelineButton}>Show Answer</button>
+                </div>
             </div>
-            <h1 style={styles.title}>Quiz</h1>
-            <p style={styles.level}>Level: {currentLevel}</p>
-            <p style={styles.question}>{currentQuestion.questionText}</p>
-            <div style={styles.optionsContainer}>
-                {currentQuestion.options.map((option, index) => (
-                    <label key={index} style={styles.option}>
-                        <input
-                            type="radio"
-                            name="answer"
-                            value={option}
-                            checked={selectedAnswer === option}
-                            onChange={(e) => setSelectedAnswer(e.target.value)}
-                        />
-                        {option}
-                    </label>
-                ))}
-            </div>
-            {error && <p style={styles.error}>{error}</p>}
-            <button onClick={handleAnswerSubmit} style={styles.button}>Submit Answer</button>
-            <div style={styles.lifelineContainer}>
-                <button onClick={() => handleUseLifeline('5050')} style={styles.lifelineButton}>50:50</button>
-                <button onClick={() => handleUseLifeline('audiencePoll')} style={styles.lifelineButton}>Audience Poll</button>
-                <button onClick={() => handleUseLifeline('changeQuestion')} style={styles.lifelineButton}>Flip the Question</button>
-            </div>
-        </div>
+        </>
     );
 };
 
 const styles = {
     container: {
         maxWidth: '600px',
-        margin: '50px auto',
+        margin: '100px auto 50px', // Added top margin to account for fixed header
         padding: '20px',
         fontFamily: 'Arial, sans-serif',
         textAlign: 'center' as const,

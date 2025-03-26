@@ -87,6 +87,8 @@ class QuestionController {
         const { lifelineType, questionId } = req.body;
         const userId = req.user?.id;
 
+        console.log(`Lifeline requested: ${lifelineType}, Question ID: ${questionId}`); // Add this debug log
+
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -109,11 +111,45 @@ class QuestionController {
 
             let lifelineResult;
             if (lifelineType === '5050') {
-                // Changed: For 50:50, select one random incorrect option so result has 2 options in total
+                // For 50:50, select one random incorrect option so result has 2 options in total
                 const incorrectOptions = question.options.filter(opt => opt !== question.correctAnswer);
                 const randomIncorrectOption = incorrectOptions.sort(() => 0.5 - Math.random()).slice(0, 1);
                 lifelineResult = [question.correctAnswer, ...randomIncorrectOption].sort(() => 0.5 - Math.random());
+            } else if (lifelineType === 'showAnswer') {
+                // For Show Answer lifeline, simply return the correct answer
+                lifelineResult = question.correctAnswer;
+            } else if (lifelineType === 'changeQuestion') {
+                console.log('Processing changeQuestion lifeline'); // Add this debug log
+                
+                // For Flip the Question lifeline, get a different random question of the same level
+                const currentLevel = question.level;
+                
+                console.log(`Finding alternative questions for level ${currentLevel}`); // Add this debug log
+                
+                // Find all questions of the current level except the current question
+                const availableQuestions = await Question.find({
+                    level: currentLevel,
+                    _id: { $ne: questionId }
+                });
+                
+                console.log(`Found ${availableQuestions.length} alternative questions`); // Add this debug log
+                
+                if (availableQuestions.length === 0) {
+                    return res.status(400).json({ 
+                        message: 'No alternative questions available for this level.' 
+                    });
+                }
+                
+                // Select a random question from the available questions
+                const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+                const newQuestion = availableQuestions[randomIndex];
+                
+                console.log(`Selected new question: ${newQuestion._id}`); // Add this debug log
+                
+                // Return the new question as the result
+                lifelineResult = newQuestion;
             } else {
+                console.log(`Unrecognized lifeline type: ${lifelineType}`); // Add this debug log
                 return res.status(400).json({ message: 'Invalid lifeline type' });
             }
 

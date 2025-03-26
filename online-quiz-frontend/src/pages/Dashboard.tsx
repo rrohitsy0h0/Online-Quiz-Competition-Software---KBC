@@ -1,32 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        localStorage.removeItem('token'); // Remove the token from localStorage
-        navigate('/'); // Redirect to the homepage
-    };
-
     return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+        <>
+            <Header />
+            <div style={styles.container}>
+                <h1 style={styles.title}>Welcome to the Dashboard</h1>
+                <p style={styles.subtitle}>You are now logged in. Start exploring the quiz competition!</p>
+                <div style={styles.buttonContainer}>
+                    <button style={styles.button} onClick={() => navigate('/quiz')}>Start Quiz</button>
+                </div>
             </div>
-            <h1 style={styles.title}>Welcome to the Dashboard</h1>
-            <p style={styles.subtitle}>You are now logged in. Start exploring the quiz competition!</p>
-            <div style={styles.buttonContainer}>
-                <button style={styles.button} onClick={() => navigate('/quiz')}>Start Quiz</button>
-            </div>
-        </div>
+        </>
     );
 };
 
 const styles = {
     container: {
         textAlign: 'center' as const,
-        padding: '50px',
+        padding: '100px 50px 50px', // Added top padding to account for fixed header
         fontFamily: 'Arial, sans-serif',
     },
     header: {
