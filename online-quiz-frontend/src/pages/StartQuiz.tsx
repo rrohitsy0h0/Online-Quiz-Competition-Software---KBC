@@ -13,21 +13,21 @@ interface Question {
 }
 
 const StartQuiz: React.FC = () => {
-    const [questions, setQuestions] = useState<Question[]>([]);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState('');
     const [error, setError] = useState('');
-    const [timeLeft, setTimeLeft] = useState(45); // Initialize time limit to 45 seconds
-    const [currentLevel, setCurrentLevel] = useState(1); // Track the current level
+    const [timeLeft, setTimeLeft] = useState(45);
+    const [currentLevel, setCurrentLevel] = useState(1);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     const resetLifelines = async () => {
         try {
-            const token = localStorage.getItem('token'); // Get token from localStorage
+            const token = localStorage.getItem('token');
             await api.post('/questions/reset-lifelines', {}, {
-                headers: { Authorization: `Bearer ${token}` }, // Add Authorization header
+                headers: { Authorization: `Bearer ${token}` },
             });
-            console.log('Lifelines reset successfully'); // Debugging log
+            console.log('Lifelines reset successfully');
         } catch (err: any) {
             console.error('Error resetting lifelines:', err.response?.data || err.message);
             setError('Failed to reset lifelines. Please try again later.');
@@ -35,56 +35,64 @@ const StartQuiz: React.FC = () => {
     };
 
     useEffect(() => {
-        resetLifelines(); // Reset lifelines when the quiz starts
+        resetLifelines();
     }, []);
 
     useEffect(() => {
-        const fetchQuestions = async () => {
+        const fetchQuestion = async () => {
+            setLoading(true);
             try {
-                const token = localStorage.getItem('token'); // Get token from localStorage
+                const token = localStorage.getItem('token');
                 const response = await api.get(`/questions?level=${currentLevel}`, {
-                    headers: { Authorization: `Bearer ${token}` }, // Add Authorization header
+                    headers: { Authorization: `Bearer ${token}` },
                 });
-                setQuestions(response.data);
-                setCurrentQuestionIndex(0); // Reset question index for the new level
+                
+                if (response.data && response.data.length > 0) {
+                    // Select one random question from all level questions
+                    const randomIndex = Math.floor(Math.random() * response.data.length);
+                    const question = response.data[randomIndex];
+                    setCurrentQuestion(question);
+                    setTimeLeft(question.timeLimit);
+                } else {
+                    alert("Congratulations! You've completed all levels!");
+                    navigate('/dashboard');
+                }
             } catch (err: any) {
-                console.error('Error fetching questions:', err.response?.data || err.message);
-                setError('Failed to load questions. Please try again later.');
+                console.error('Error fetching question:', err.response?.data || err.message);
+                setError('Failed to load question. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         };
 
-        fetchQuestions();
-    }, [currentLevel]); // Trigger fetchQuestions when currentLevel changes
+        fetchQuestion();
+    }, [currentLevel, navigate]);
 
     useEffect(() => {
-        if (questions.length > 0) {
-            const currentQuestion = questions[currentQuestionIndex];
-            setTimeLeft(currentQuestion.timeLimit); // Dynamically set time limit based on the current question
-
+        if (currentQuestion) {
             const timer = setInterval(() => {
                 setTimeLeft((prevTime) => {
                     if (prevTime <= 1) {
                         clearInterval(timer);
                         alert('Time is up! Game over.');
-                        navigate('/dashboard'); // Redirect to dashboard on timeout
+                        navigate('/dashboard');
                     }
                     return prevTime - 1;
                 });
             }, 1000);
 
-            return () => clearInterval(timer); // Clear timer on component unmount or question change
+            return () => clearInterval(timer);
         }
-    }, [currentQuestionIndex, questions]);
+    }, [currentQuestion, navigate]);
 
     const handleAnswerSubmit = async () => {
-        if (!selectedAnswer) {
+        if (!selectedAnswer || !currentQuestion) {
             setError('Please select an answer.');
             return;
         }
 
         try {
             const token = localStorage.getItem('token');
-            const currentQuestion = questions[currentQuestionIndex];
             const response = await api.post('/questions/answer', {
                 questionId: currentQuestion._id,
                 answer: selectedAnswer,
@@ -94,16 +102,13 @@ const StartQuiz: React.FC = () => {
 
             if (response.data.nextLevel !== undefined) {
                 setCurrentLevel(response.data.nextLevel); // Move to the next level
-                setCurrentQuestionIndex(0); // Reset to the first question of the next level
-            } else if (response.data.message === 'Correct answer') {
-                setCurrentQuestionIndex((prevIndex) => prevIndex + 1); // Move to the next question
             }
 
             setSelectedAnswer('');
             setError('');
         } catch (err: any) {
             if (err.response?.status === 400 && err.response?.data?.message === 'Wrong answer. Redirecting to dashboard.') {
-                navigate('/dashboard'); // Redirect to dashboard on wrong answer
+                navigate('/dashboard');
             } else {
                 console.error('Error submitting answer:', err.response?.data || err.message);
                 setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
@@ -112,39 +117,35 @@ const StartQuiz: React.FC = () => {
     };
 
     const handleUseLifeline = async (lifelineType: string) => {
+        if (!currentQuestion) return;
+
         try {
-            console.log(`Using lifeline: ${lifelineType}`); // Add this debug log
+            console.log(`Using lifeline: ${lifelineType}`);
             
             const token = localStorage.getItem('token');
             const response = await api.post('/questions/lifeline', {
                 lifelineType,
-                questionId: questions[currentQuestionIndex]._id,
+                questionId: currentQuestion._id,
             }, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            console.log('Lifeline response:', response.data); // Add this debug log
+            console.log('Lifeline response:', response.data);
 
             const { result } = response.data;
             if (lifelineType === '5050') {
-                // Update the current question's options to only include the remaining options
-                const updatedQuestions = [...questions];
-                updatedQuestions[currentQuestionIndex].options = result;
-                setQuestions(updatedQuestions);
+                // Update the current question's options
+                setCurrentQuestion({
+                    ...currentQuestion,
+                    options: result
+                });
             } else if (lifelineType === 'showAnswer') {
-                // Display the correct answer to the user
                 alert(`The correct answer is: ${result}`);
             } else if (lifelineType === 'changeQuestion') {
-                // Replace the current question with the new question
-                const updatedQuestions = [...questions];
-                updatedQuestions[currentQuestionIndex] = result;
-                setQuestions(updatedQuestions);
-                
-                // Reset selected answer since the question changed
-                setSelectedAnswer('');
-                
-                // Reset the timer based on the new question's time limit
+                // Replace the current question with a new one
+                setCurrentQuestion(result);
                 setTimeLeft(result.timeLimit);
+                setSelectedAnswer('');
             }
         } catch (err: any) {
             console.error('Error using lifeline:', err.response?.data || err.message);
@@ -158,16 +159,27 @@ const StartQuiz: React.FC = () => {
         }
     };
 
-    if (questions.length === 0) {
+    if (loading) {
         return (
             <>
                 <Header />
-                <p>Loading questions...</p>
+                <div style={{ ...styles.container, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <p>Loading question...</p>
+                </div>
             </>
         );
     }
 
-    const currentQuestion = questions[currentQuestionIndex];
+    if (!currentQuestion) {
+        return (
+            <>
+                <Header />
+                <div style={{ ...styles.container, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <p>No questions available.</p>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>

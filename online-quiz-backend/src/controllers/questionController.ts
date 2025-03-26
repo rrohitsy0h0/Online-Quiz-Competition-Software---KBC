@@ -13,7 +13,8 @@ class QuestionController {
         const { level } = req.query; // Get the level from query parameters
         try {
             const query = level ? { level: parseInt(level as string, 10) } : {};
-            const questions = await Question.find(query); // Fetch questions based on level
+            // Return all questions for the level (remove .limit(1))
+            const questions = await Question.find(query);
             res.status(200).json(questions);
         } catch (error) {
             res.status(500).json({ message: 'Error retrieving questions', error });
@@ -252,31 +253,21 @@ class QuestionController {
             const points = question.level * 1000;
             user.score += points;
 
-            // Save the updated user state
+            // Always move to the next level immediately on correct answer
+            const nextLevel = question.level + 1;
+            
+            // Reset for next level
+            user.currentQuestionIndex = 0; 
             await user.save();
-
-            // Check if the user has completed all questions for the current level
-            const totalQuestionsForLevel = await Question.countDocuments({ level: question.level });
-            if (user.currentQuestionIndex + 1 >= totalQuestionsForLevel) {
-                user.currentQuestionIndex = 0; // Reset for next level
-                await user.save();
-                return res.status(200).json({
-                    message: 'Level completed! Proceeding to the next level.',
-                    nextLevel: question.level + 1,
-                    currentQuestionIndex: user.currentQuestionIndex,
-                    score: user.score // Include updated score in response
-                });
-            } else {
-                user.currentQuestionIndex += 1;
-            }
-
-            await user.save();
-
-            res.status(200).json({ 
-                message: 'Correct answer',
+            
+            // Return the next level in the response
+            return res.status(200).json({
+                message: 'Correct answer! Moving to next level.',
+                nextLevel: nextLevel,
                 currentQuestionIndex: user.currentQuestionIndex,
-                score: user.score // Include updated score in response
+                score: user.score
             });
+
         } catch (error) {
             console.error('Error answering question:', error);
             res.status(500).json({ message: 'Error answering question', error });
