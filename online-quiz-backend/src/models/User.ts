@@ -23,7 +23,6 @@ const userSchema = new mongoose.Schema({
         of: Boolean, // Tracks whether a specific lifeline has been used
         default: {
             '5050': false,
-            'phoneAFriend': false,
             'audiencePoll': false,
             'changeQuestion': false,
         },

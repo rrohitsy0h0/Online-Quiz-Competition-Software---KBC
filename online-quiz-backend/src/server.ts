@@ -1,9 +1,9 @@
 import express from 'express';
 import connectDB from './config/db';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes'; // Import authRoutes
-import questionRoutes from './routes/questionRoutes'; // Import questionRoutes
-import leaderboardRoutes from './routes/leaderboardRoutes'; // Import leaderboardRoutes
+import authRoutes from './routes/authRoutes'; 
+import questionRoutes from './routes/questionRoutes';
+// Remove leaderboardRoutes import
 import cors from 'cors';
 
 dotenv.config();
@@ -22,9 +22,9 @@ app.use(cors({
 })); // Ensure CORS is enabled
 
 // Define routes
-app.use('/api/auth', authRoutes); // Use authRoutes
-app.use('/api/questions', questionRoutes); // Use questionRoutes
-app.use('/api/leaderboard', leaderboardRoutes); // Use leaderboardRoutes
+app.use('/api/auth', authRoutes);
+app.use('/api/questions', questionRoutes);
+// Remove leaderboard routes
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

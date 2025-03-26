@@ -17,7 +17,6 @@ const Dashboard: React.FC = () => {
             <h1 style={styles.title}>Welcome to the Dashboard</h1>
             <p style={styles.subtitle}>You are now logged in. Start exploring the quiz competition!</p>
             <div style={styles.buttonContainer}>
-                <button style={styles.button} onClick={() => navigate('/leaderboard')}>View Leaderboard</button>
                 <button style={styles.button} onClick={() => navigate('/quiz')}>Start Quiz</button>
             </div>
         </div>

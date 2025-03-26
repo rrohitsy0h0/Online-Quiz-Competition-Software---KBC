@@ -169,7 +169,6 @@ const StartQuiz: React.FC = () => {
             <button onClick={handleAnswerSubmit} style={styles.button}>Submit Answer</button>
             <div style={styles.lifelineContainer}>
                 <button onClick={() => handleUseLifeline('5050')} style={styles.lifelineButton}>50:50</button>
-                <button onClick={() => handleUseLifeline('phoneAFriend')} style={styles.lifelineButton}>Phone a Friend</button>
                 <button onClick={() => handleUseLifeline('audiencePoll')} style={styles.lifelineButton}>Audience Poll</button>
                 <button onClick={() => handleUseLifeline('changeQuestion')} style={styles.lifelineButton}>Flip the Question</button>
             </div>

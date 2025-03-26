@@ -4,8 +4,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Leaderboard from './pages/Leaderboard';
-import StartQuiz from './pages/StartQuiz'; // Import StartQuiz page
+// Remove Leaderboard import
+import StartQuiz from './pages/StartQuiz';
 
 const App: React.FC = () => {
     return (
@@ -15,8 +15,8 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/leaderboard" element={<Leaderboard />} />
-                <Route path="/quiz" element={<StartQuiz />} /> {/* Add StartQuiz route */}
+                {/* Remove leaderboard route */}
+                <Route path="/quiz" element={<StartQuiz />} />
             </Routes>
         </Router>
     );
