@@ -223,6 +223,8 @@ const StartQuiz: React.FC = () => {
             console.log('Used lifelines after update:', {...usedLifelines, [lifelineType]: true});
         } catch (err: any) {
             console.error('Error details:', err.response?.data);
+            
+            // Filter certain error messages that we don't want to show to the user
             if (err.response?.data?.message === 'Lifeline already used') {
                 setError('This lifeline has already been used.');
                 
@@ -233,8 +235,12 @@ const StartQuiz: React.FC = () => {
                 }));
             } else if (err.response?.data?.message === 'No alternative questions available for this level.') {
                 setError('No alternative questions available for this level.');
+            } else if (err.response?.data?.message === 'Invalid lifeline type') {
+                // Don't show this error to the user, just log it
+                console.log('Server reported invalid lifeline type');
             } else {
-                setError(err.response?.data?.message || 'Failed to use lifeline. Please try again.');
+                // Generic error message for other errors
+                setError('An error occurred. Please try again.');
             }
         }
     };
