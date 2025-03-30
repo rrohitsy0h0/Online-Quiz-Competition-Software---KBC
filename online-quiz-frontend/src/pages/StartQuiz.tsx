@@ -295,23 +295,28 @@ const StartQuiz: React.FC = () => {
         <>
             <Header />
             <div style={styles.container}>
-                <div style={styles.timerContainer}>
-                    <p style={styles.timer}>
-                        Time Left: {timeLeft === Infinity || timeLeft >= 999000 ? 'Unlimited' : `${timeLeft} seconds`}
-                    </p>
-                </div>
+                <p style={styles.timer}>
+                    Time Left: {timeLeft === Infinity || timeLeft >= 999000 ? 'Unlimited' : `${timeLeft} seconds`}
+                </p>
                 <h1 style={styles.title}>Quiz</h1>
                 <p style={styles.level}>Level: {currentLevel}</p>
                 <p style={styles.question}>{currentQuestion.questionText}</p>
                 <div style={styles.optionsContainer}>
                     {currentQuestion.options.map((option, index) => (
-                        <label key={index} style={styles.option}>
+                        <label
+                            key={index}
+                            style={{
+                                ...styles.option,
+                                ...(selectedAnswer === option ? styles.selectedOption : {}),
+                            }}
+                        >
                             <input
                                 type="radio"
                                 name="answer"
                                 value={option}
                                 checked={selectedAnswer === option}
                                 onChange={(e) => setSelectedAnswer(e.target.value)}
+                                style={{ display: 'none' }} // Hide the radio button
                             />
                             {option}
                         </label>
@@ -356,25 +361,28 @@ const StartQuiz: React.FC = () => {
 
 const styles = {
     container: {
-        maxWidth: '600px',
-        margin: '100px auto 50px', // Added top margin to account for fixed header
+        maxWidth: '800px',
+        margin: '100px auto 50px',
         padding: '20px',
         fontFamily: 'Arial, sans-serif',
         textAlign: 'center' as const,
-        position: 'relative' as const,
+        backgroundColor: '#1a1a3d', // Dark violet background
+        color: '#fff', // White text
+        borderRadius: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+        position: 'relative' as const, // Ensure positioning for timer
     },
-    timerContainer: {
+    timer: {
+        fontSize: '1.5rem',
+        color: '#ffcc00', // Yellow for timer
+        marginBottom: '20px',
         position: 'absolute' as const,
         top: '10px',
         right: '10px',
     },
-    timer: {
-        fontSize: '1.2rem',
-        color: 'red',
-    },
     title: {
         fontSize: '2rem',
-        color: '#333',
+        color: '#ffcc00', // Yellow for title
         marginBottom: '20px',
     },
     level: {
@@ -384,19 +392,39 @@ const styles = {
     },
     question: {
         fontSize: '1.2rem',
-        color: '#555',
         marginBottom: '20px',
     },
     optionsContainer: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        alignItems: 'flex-start' as const,
-        gap: '10px',
+        display: 'grid', // Use grid layout
+        gridTemplateColumns: '1fr 1fr', // Two columns
+        gap: '15px',
+        justifyContent: 'center',
         marginBottom: '20px',
     },
     option: {
+        backgroundColor: '#333366', // Dark blue for options
+        color: '#fff',
+        padding: '10px 20px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        border: 'none',
         fontSize: '1rem',
-        color: '#333',
+        textAlign: 'center' as const,
+        transition: 'background-color 0.3s',
+    },
+    optionHover: {
+        backgroundColor: '#444488', // Slightly lighter blue on hover
+    },
+    selectedOption: {
+        backgroundColor: '#cc7722', // Yellow ochre for selected option
+        color: '#fff',
+        fontWeight: 'bold' as const,
+        border: '2px solid #a65e2e', // Slightly darker border for emphasis
+        padding: '10px 20px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        textAlign: 'center' as const,
+        transition: 'background-color 0.3s',
     },
     button: {
         padding: '10px 20px',
@@ -406,7 +434,7 @@ const styles = {
         border: 'none',
         borderRadius: '5px',
         cursor: 'pointer',
-        marginBottom: '20px',
+        marginTop: '20px',
     },
     error: {
         color: 'red',
@@ -433,6 +461,15 @@ const styles = {
         cursor: 'not-allowed',
         opacity: 0.6,
     },
+};
+
+// Add hover effect for options
+const handleMouseEnter = (e: React.MouseEvent<HTMLLabelElement>) => {
+    (e.target as HTMLElement).style.backgroundColor = styles.optionHover.backgroundColor!;
+};
+
+const handleMouseLeave = (e: React.MouseEvent<HTMLLabelElement>) => {
+    (e.target as HTMLElement).style.backgroundColor = styles.option.backgroundColor!;
 };
 
 export default StartQuiz;

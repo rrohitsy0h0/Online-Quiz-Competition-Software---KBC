@@ -20,13 +20,17 @@ class QuestionController {
     getAllQuestions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { level } = req.query; // Get the level from query parameters
+            console.log(`Fetching questions for level: ${level}`);
             try {
                 const query = level ? { level: parseInt(level, 10) } : {};
+                console.log('MongoDB query:', query);
                 // Return all questions for the level (remove .limit(1))
                 const questions = yield Question_1.default.find(query);
+                console.log(`Found ${questions.length} questions`);
                 res.status(200).json(questions);
             }
             catch (error) {
+                console.error('Error retrieving questions:', error);
                 res.status(500).json({ message: 'Error retrieving questions', error });
             }
         });
