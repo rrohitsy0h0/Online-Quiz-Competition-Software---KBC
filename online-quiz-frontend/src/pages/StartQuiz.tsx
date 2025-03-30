@@ -92,17 +92,19 @@ const StartQuiz: React.FC = () => {
     }, [currentLevel, navigate]);
 
     useEffect(() => {
-        if (currentQuestion) {
-            // Check if time is very large (unlimited)
+        if (currentQuestion && currentQuestion.level <= 10) {
+            const tickingSound = new Audio('/sounds/tick.mp3'); // Path to the ticking sound file
+            tickingSound.loop = true; // Loop the sound
+
             const isUnlimitedTime = currentQuestion.timeLimit >= 999000;
-            
             if (!isUnlimitedTime) {
-                setTimeLeft(currentQuestion.timeLimit);
-                
+                tickingSound.play().catch((err) => console.error('Error playing ticking sound:', err));
+
                 const timer = setInterval(() => {
                     setTimeLeft((prevTime) => {
                         if (prevTime <= 1) {
                             clearInterval(timer);
+                            tickingSound.pause(); // Stop the ticking sound
                             alert('Time is up! Game over.');
                             navigate('/dashboard');
                         }
@@ -110,9 +112,11 @@ const StartQuiz: React.FC = () => {
                     });
                 }, 1000);
 
-                return () => clearInterval(timer);
+                return () => {
+                    clearInterval(timer);
+                    tickingSound.pause(); // Stop the ticking sound when the component unmounts
+                };
             } else {
-                // Set timeLeft to "Unlimited" or a very large number
                 setTimeLeft(Infinity);
             }
         }
