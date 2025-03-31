@@ -4,7 +4,6 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-// Remove Leaderboard import
 import StartQuiz from './pages/StartQuiz';
 
 const App: React.FC = () => {
@@ -15,7 +14,6 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                {/* Remove leaderboard route */}
                 <Route path="/quiz" element={<StartQuiz />} />
             </Routes>
         </Router>

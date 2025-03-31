@@ -3,7 +3,6 @@ import connectDB from './config/db';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes'; 
 import questionRoutes from './routes/questionRoutes';
-// Remove leaderboardRoutes import
 import cors from 'cors';
 
 dotenv.config();
@@ -24,7 +23,6 @@ app.use(cors({
 // Define routes
 app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
-// Remove leaderboard routes
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
