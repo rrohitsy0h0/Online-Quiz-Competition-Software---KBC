@@ -25,6 +25,7 @@ const StartQuiz: React.FC = () => {
         'changeQuestion': false,
         'showAnswer': false,
     });
+    const [correctAnswer, setCorrectAnswer] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const resetLifelines = async () => {
@@ -240,7 +241,9 @@ const StartQuiz: React.FC = () => {
                     options: result
                 });
             } else if (lifelineType === 'showAnswer') {
-                alert(`The correct answer is: ${result}`);
+                // Set the correct answer as highlighted AND selected
+                setCorrectAnswer(result);
+                setSelectedAnswer(result); // Automatically select the correct answer
             }
             
             console.log('Used lifelines after update:', {...usedLifelines, [lifelineType]: true});
@@ -312,6 +315,7 @@ const StartQuiz: React.FC = () => {
                             style={{
                                 ...styles.option,
                                 ...(selectedAnswer === option ? styles.selectedOption : {}),
+                                ...(correctAnswer === option ? styles.correctOption : {}),
                             }}
                         >
                             <input
@@ -355,7 +359,7 @@ const StartQuiz: React.FC = () => {
                         style={usedLifelines['showAnswer'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
                         disabled={usedLifelines['showAnswer']}
                     >
-                        Show Answer
+                        Expert's Advice
                     </button>
                 </div>
             </div>
@@ -424,6 +428,18 @@ const styles = {
         color: '#fff',
         fontWeight: 'bold' as const,
         border: '2px solid #a65e2e', // Slightly darker border for emphasis
+        padding: '10px 20px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        textAlign: 'center' as const,
+        transition: 'background-color 0.3s',
+    },
+    correctOption: {
+        backgroundColor: '#28a745', // Green for correct answer
+        color: '#fff',
+        fontWeight: 'bold' as const,
+        border: '2px solid #1e7e34', // Darker green border
+        boxShadow: '0 0 10px rgba(40, 167, 69, 0.7)', // Glow effect
         padding: '10px 20px',
         borderRadius: '5px',
         cursor: 'pointer',
