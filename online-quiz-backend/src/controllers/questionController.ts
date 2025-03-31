@@ -92,7 +92,7 @@ class QuestionController {
         const { lifelineType, questionId } = req.body;
         const userId = req.user?.id;
 
-        console.log(`Lifeline requested: ${lifelineType}, Question ID: ${questionId}`); // Add this debug log
+        console.log(`Lifeline requested: ${lifelineType}, Question ID: ${questionId}`);
 
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
@@ -123,13 +123,16 @@ class QuestionController {
             } else if (lifelineType === 'showAnswer') {
                 // For Show Answer lifeline, simply return the correct answer
                 lifelineResult = question.correctAnswer;
+            } else if (lifelineType === 'audiencePoll') {
+                // Generate audience poll percentages
+                lifelineResult = this.generateAudiencePollResults(question.options, question.correctAnswer);
             } else if (lifelineType === 'changeQuestion') {
-                console.log('Processing changeQuestion lifeline'); // Add this debug log
+                console.log('Processing changeQuestion lifeline');
                 
                 // For Flip the Question lifeline, get a different random question of the same level
                 const currentLevel = question.level;
                 
-                console.log(`Finding alternative questions for level ${currentLevel}`); // Add this debug log
+                console.log(`Finding alternative questions for level ${currentLevel}`);
                 
                 // Find all questions of the current level except the current question
                 const availableQuestions = await Question.find({
@@ -137,7 +140,7 @@ class QuestionController {
                     _id: { $ne: questionId }
                 });
                 
-                console.log(`Found ${availableQuestions.length} alternative questions`); // Add this debug log
+                console.log(`Found ${availableQuestions.length} alternative questions`);
                 
                 if (availableQuestions.length === 0) {
                     return res.status(400).json({ 
@@ -149,12 +152,12 @@ class QuestionController {
                 const randomIndex = Math.floor(Math.random() * availableQuestions.length);
                 const newQuestion = availableQuestions[randomIndex];
                 
-                console.log(`Selected new question: ${newQuestion._id}`); // Add this debug log
+                console.log(`Selected new question: ${newQuestion._id}`);
                 
                 // Return the new question as the result
                 lifelineResult = newQuestion;
             } else {
-                console.log(`Unrecognized lifeline type: ${lifelineType}`); // Add this debug log
+                console.log(`Unrecognized lifeline type: ${lifelineType}`);
                 return res.status(400).json({ message: 'Invalid lifeline type' });
             }
 
@@ -167,6 +170,47 @@ class QuestionController {
             console.error('Error using lifeline:', error);
             res.status(500).json({ message: 'Error using lifeline', error });
         }
+    }
+
+    // Helper method to generate audience poll results
+    private generateAudiencePollResults(options: string[], correctAnswer: string): {[key: string]: number} {
+        // Generate a random percentage for the correct answer (between 50% and 80%)
+        const correctPercentage = Math.floor(Math.random() * 31) + 50; // Random between 50 and 80
+        
+        // Calculate remaining percentage to distribute among incorrect options
+        const remainingPercentage = 100 - correctPercentage;
+        
+        // Filter out the correct answer to get incorrect options
+        const incorrectOptions = options.filter(option => option !== correctAnswer);
+        
+        // Distribute remaining percentage randomly among incorrect options
+        let results: {[key: string]: number} = {};
+        
+        // Set the correct answer percentage
+        results[correctAnswer] = correctPercentage;
+        
+        // Initialize all incorrect options with 0
+        incorrectOptions.forEach(option => {
+            results[option] = 0;
+        });
+        
+        // Distribute remaining percentage randomly
+        let remainingToDistribute = remainingPercentage;
+        for (let i = 0; i < incorrectOptions.length; i++) {
+            // For the last option, assign all remaining percentage
+            if (i === incorrectOptions.length - 1) {
+                results[incorrectOptions[i]] = remainingToDistribute;
+            } else {
+                // For other options, assign a random portion
+                const maxPercent = Math.floor(remainingToDistribute / (incorrectOptions.length - i));
+                const percent = i === incorrectOptions.length - 1 ? 
+                    remainingToDistribute : Math.floor(Math.random() * maxPercent);
+                results[incorrectOptions[i]] = percent;
+                remainingToDistribute -= percent;
+            }
+        }
+        
+        return results;
     }
 
     // Method to navigate to the next question

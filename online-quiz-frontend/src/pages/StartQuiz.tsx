@@ -12,6 +12,11 @@ interface Question {
     level: number;
 }
 
+// New interface for audience poll results
+interface AudiencePollResult {
+    [option: string]: number; // Maps each option to its percentage
+}
+
 const StartQuiz: React.FC = () => {
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState('');
@@ -26,6 +31,7 @@ const StartQuiz: React.FC = () => {
         'showAnswer': false,
     });
     const [correctAnswer, setCorrectAnswer] = useState<string | null>(null);
+    const [audiencePollResults, setAudiencePollResults] = useState<AudiencePollResult | null>(null);
     const navigate = useNavigate();
 
     const resetLifelines = async () => {
@@ -215,35 +221,93 @@ const StartQuiz: React.FC = () => {
                     setError('No questions available for this level.');
                     return;
                 }
-            }
-            
-            // For other lifelines, use the normal approach
-            const token = localStorage.getItem('token');
-            const response = await api.post('/questions/lifeline', {
-                lifelineType,
-                questionId: currentQuestion._id,
-            }, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            } else if (lifelineType === 'audiencePoll') {
+                // Mark the lifeline as used
+                setUsedLifelines(prev => ({
+                    ...prev,
+                    [lifelineType]: true
+                }));
 
-            console.log('Lifeline response:', response.data);
-            
-            // IMPORTANT: Mark the lifeline as used BEFORE updating UI
-            setUsedLifelines(prev => ({
-                ...prev,
-                [lifelineType]: true
-            }));
-
-            const { result } = response.data;
-            if (lifelineType === '5050') {
-                setCurrentQuestion({
-                    ...currentQuestion,
-                    options: result
+                // Generate audience poll results on client side if not receiving from backend
+                const correctAnswer = currentQuestion.correctAnswer;
+                const options = currentQuestion.options;
+                
+                // Generate a random percentage for the correct answer (between 50% and 85%)
+                const correctPercentage = Math.floor(Math.random() * 36) + 50;
+                
+                // Calculate the remaining percentage to distribute
+                const remainingPercentage = 100 - correctPercentage;
+                
+                // Get the incorrect options
+                const incorrectOptions = options.filter(option => option !== correctAnswer);
+                
+                // Initialize results object
+                const pollResults: AudiencePollResult = {};
+                
+                // Set the correct answer percentage
+                pollResults[correctAnswer] = correctPercentage;
+                
+                // Distribute remaining percentage among incorrect options
+                let remainingToDistribute = remainingPercentage;
+                for (let i = 0; i < incorrectOptions.length; i++) {
+                    const option = incorrectOptions[i];
+                    if (i === incorrectOptions.length - 1) {
+                        // Last option gets all remaining percentage
+                        pollResults[option] = remainingToDistribute;
+                    } else {
+                        // Calculate a random percentage for this option
+                        const maxForOption = Math.floor(remainingToDistribute / (incorrectOptions.length - i));
+                        const percentage = Math.floor(Math.random() * maxForOption);
+                        pollResults[option] = percentage;
+                        remainingToDistribute -= percentage;
+                    }
+                }
+                
+                console.log("Client-generated audience poll results:", pollResults);
+                setAudiencePollResults(pollResults);
+                
+                // Still call the API to mark the lifeline as used on the server
+                const token = localStorage.getItem('token');
+                await api.post('/questions/lifeline', {
+                    lifelineType,
+                    questionId: currentQuestion._id,
+                }, {
+                    headers: { Authorization: `Bearer ${token}` },
                 });
-            } else if (lifelineType === 'showAnswer') {
-                // Set the correct answer as highlighted AND selected
-                setCorrectAnswer(result);
-                setSelectedAnswer(result); // Automatically select the correct answer
+                
+                return;
+            } else {
+                // For other lifelines, use the normal approach
+                const token = localStorage.getItem('token');
+                const response = await api.post('/questions/lifeline', {
+                    lifelineType,
+                    questionId: currentQuestion._id,
+                }, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                console.log('Lifeline response:', response.data);
+                
+                // IMPORTANT: Mark the lifeline as used BEFORE updating UI
+                setUsedLifelines(prev => ({
+                    ...prev,
+                    [lifelineType]: true
+                }));
+
+                const { result } = response.data;
+                if (lifelineType === '5050') {
+                    setCurrentQuestion({
+                        ...currentQuestion,
+                        options: result
+                    });
+                } else if (lifelineType === 'showAnswer') {
+                    // Set the correct answer as highlighted AND selected
+                    setCorrectAnswer(result);
+                    setSelectedAnswer(result); // Automatically select the correct answer
+                } else if (lifelineType === 'audiencePoll') {
+                    // Use the server results if they're provided
+                    setAudiencePollResults(result);
+                }
             }
             
             console.log('Used lifelines after update:', {...usedLifelines, [lifelineType]: true});
@@ -327,6 +391,11 @@ const StartQuiz: React.FC = () => {
                                 style={{ display: 'none' }} // Hide the radio button
                             />
                             {option}
+                            {audiencePollResults && audiencePollResults[option] !== undefined && (
+                                <span style={styles.pollPercentage}>
+                                    {' '}{audiencePollResults[option]}%
+                                </span>
+                            )}
                         </label>
                     ))}
                 </div>
@@ -445,6 +514,11 @@ const styles = {
         cursor: 'pointer',
         textAlign: 'center' as const,
         transition: 'background-color 0.3s',
+    },
+    pollPercentage: {
+        marginLeft: '10px',
+        fontWeight: 'bold' as const,
+        color: '#ffcc00', // Yellow color for poll percentages
     },
     button: {
         padding: '10px 20px',
