@@ -12,12 +12,10 @@ interface Question {
     level: number;
 }
 
-// New interface for audience poll results
 interface AudiencePollResult {
-    [option: string]: number; // Maps each option to its percentage
+    [option: string]: number;
 }
 
-// Function to get prize for level needs to be defined outside the components/hooks
 const getPrizeForLevel = (level: number): string => {
     const prizeMoney = {
         0: '0',
@@ -41,6 +39,44 @@ const getPrizeForLevel = (level: number): string => {
     return prizeMoney[level as keyof typeof prizeMoney] || '0';
 };
 
+const Particles = () => {
+    useEffect(() => {
+        const createParticles = () => {
+            const particleCount = 20;
+            const container = document.body;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                // Random position
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+
+                // Random size
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                // Random animation delay
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+
+                container.appendChild(particle);
+            }
+        };
+
+        createParticles();
+
+        // Cleanup function to remove particles when component unmounts
+        return () => {
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(particle => particle.remove());
+        };
+    }, []);
+
+    return null;
+};
+
 const StartQuiz: React.FC = () => {
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState('');
@@ -62,18 +98,15 @@ const StartQuiz: React.FC = () => {
     const [gameEndReason, setGameEndReason] = useState<string>('');
     const navigate = useNavigate();
 
-    // Update the mouse event handlers to account for selected and correct options
     const handleMouseEnter = (e: React.MouseEvent<HTMLLabelElement>, option: string) => {
-        // Only change background if this option isn't selected or correct
         if (option !== selectedAnswer && option !== correctAnswer) {
-            e.currentTarget.style.backgroundColor = '#444488'; // Hover background
+            e.currentTarget.style.backgroundColor = '#444488';
         }
     };
 
     const handleMouseLeave = (e: React.MouseEvent<HTMLLabelElement>, option: string) => {
-        // Only reset background if this option isn't selected or correct
         if (option !== selectedAnswer && option !== correctAnswer) {
-            e.currentTarget.style.backgroundColor = '#333366'; // Default background
+            e.currentTarget.style.backgroundColor = '#333366';
         }
     };
 
@@ -83,9 +116,6 @@ const StartQuiz: React.FC = () => {
             await api.post('/questions/reset-lifelines', {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            console.log('Lifelines reset successfully');
-            
-            // Reset local lifeline state
             setUsedLifelines({
                 '5050': false,
                 'audiencePoll': false,
@@ -93,7 +123,6 @@ const StartQuiz: React.FC = () => {
                 'showAnswer': false,
             });
         } catch (err: any) {
-            console.error('Error resetting lifelines:', err.response?.data || err.message);
             setError('Failed to reset lifelines. Please try again later.');
         }
     };
@@ -110,28 +139,20 @@ const StartQuiz: React.FC = () => {
                 const response = await api.get(`/questions?level=${currentLevel}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                
                 if (response.data && response.data.length > 0) {
-                    // Select one random question from all level questions
                     const randomIndex = Math.floor(Math.random() * response.data.length);
                     const question = response.data[randomIndex];
                     setCurrentQuestion(question);
                     setTimeLeft(question.timeLimit);
                 } else {
-                    // No questions found for this level
-                    console.log(`No questions found for level ${currentLevel}`);
-                    
-                    // If we're at level 1 and no questions found, show error
                     if (currentLevel === 1) {
                         setError('No questions available. Please contact the administrator.');
                     } else {
-                        // Otherwise, we've completed all levels
                         alert("Congratulations! You've completed all levels!");
                         navigate('/dashboard');
                     }
                 }
             } catch (err: any) {
-                console.error('Error fetching question:', err.response?.data || err.message);
                 setError('Failed to load question. Please try again later.');
             } finally {
                 setLoading(false);
@@ -143,20 +164,20 @@ const StartQuiz: React.FC = () => {
 
     useEffect(() => {
         if (currentQuestion && currentQuestion.level <= 10) {
-            const tickingSound = new Audio('/sounds/tick.mp3'); // Path to the ticking sound file
-            tickingSound.loop = true; // Loop the sound
+            const tickingSound = new Audio('/sounds/tick.mp3');
+            tickingSound.loop = true;
 
             const isUnlimitedTime = currentQuestion.timeLimit >= 999000;
             if (!isUnlimitedTime) {
-                tickingSound.play().catch((err) => console.error('Error playing ticking sound:', err));
+                tickingSound.play().catch(() => {});
 
                 const timer = setInterval(() => {
                     setTimeLeft((prevTime) => {
                         if (prevTime <= 1) {
                             clearInterval(timer);
-                            tickingSound.pause(); // Stop the ticking sound
+                            tickingSound.pause();
                             setGameEndReason('Time is up!');
-                            setFinalPrize(getPrizeForLevel(currentLevel - 1)); // Previous level prize
+                            setFinalPrize(getPrizeForLevel(currentLevel - 1));
                             setShowEndGameModal(true);
                         }
                         return prevTime - 1;
@@ -165,21 +186,19 @@ const StartQuiz: React.FC = () => {
 
                 return () => {
                     clearInterval(timer);
-                    tickingSound.pause(); // Stop the ticking sound when the component unmounts
+                    tickingSound.pause();
                 };
             } else {
                 setTimeLeft(Infinity);
             }
         }
-    }, [currentQuestion, currentLevel]); // Remove navigate from dependencies, add currentLevel
+    }, [currentQuestion, currentLevel]);
 
     useEffect(() => {
-        // Update the prize money based on current level
         setCurrentPrize(getPrizeForLevel(currentLevel));
     }, [currentLevel]);
 
     useEffect(() => {
-        // Add hover effect for modal button
         const modalButton = document.querySelector('button[style*="modalButton"]');
         if (modalButton) {
             modalButton.addEventListener('mouseenter', (e) => {
@@ -188,7 +207,7 @@ const StartQuiz: React.FC = () => {
                 target.style.transform = 'translateY(-2px)';
                 target.style.boxShadow = '0 6px 15px rgba(255, 204, 0, 0.4)';
             });
-            
+
             modalButton.addEventListener('mouseleave', (e) => {
                 const target = e.currentTarget as HTMLElement;
                 target.style.backgroundColor = '#ffcc00';
@@ -197,14 +216,13 @@ const StartQuiz: React.FC = () => {
             });
         }
 
-        // Cleanup event listeners on unmount
         return () => {
             if (modalButton) {
                 modalButton.removeEventListener('mouseenter', () => {});
                 modalButton.removeEventListener('mouseleave', () => {});
             }
         };
-    }, []); // Empty dependency array means this runs once after first render
+    }, []);
 
     const handleAnswerSubmit = async () => {
         if (!selectedAnswer || !currentQuestion) {
@@ -220,34 +238,27 @@ const StartQuiz: React.FC = () => {
             }, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            
-            // If we've completed the final level, show the winning modal
+
             if (currentQuestion.level === 16) {
                 setGameEndReason('Congratulations! You have won the grand prize!');
                 setFinalPrize(getPrizeForLevel(16));
                 setShowEndGameModal(true);
                 return;
             }
-            
-            // Otherwise continue to the next level
+
             setCurrentLevel(currentQuestion.level + 1);
             setSelectedAnswer('');
             setError('');
         } catch (err: any) {
             if (err.response?.status === 400 && err.response?.data?.message === 'Wrong answer. Redirecting to dashboard.') {
-                // Show the end game modal with the amount won
                 setGameEndReason('Sorry, that was the wrong answer.');
-                
-                // If they got at least one question right, they get the prize from the previous level
                 if (currentLevel > 1) {
                     setFinalPrize(getPrizeForLevel(currentLevel - 1));
                 } else {
                     setFinalPrize('0');
                 }
-                
                 setShowEndGameModal(true);
             } else {
-                console.error('Error submitting answer:', err.response?.data || err.message);
                 setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
             }
         }
@@ -255,113 +266,85 @@ const StartQuiz: React.FC = () => {
 
     const handleUseLifeline = async (lifelineType: string) => {
         if (!currentQuestion) return;
-        
-        // Check if the lifeline has already been used
+
         if (usedLifelines[lifelineType]) {
             setError('This lifeline has already been used.');
             return;
         }
 
         try {
-            console.log(`Using lifeline: ${lifelineType} for question ID: ${currentQuestion._id}`);
-            
-            // Special case for "changeQuestion" - directly fetch a new question
             if (lifelineType === 'changeQuestion') {
-                // Fetch all questions for the current level
                 const token = localStorage.getItem('token');
                 const getAllResponse = await api.get(`/questions?level=${currentLevel}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                
+
                 if (getAllResponse.data && getAllResponse.data.length > 0) {
-                    // Filter out the current question
                     const otherQuestions = getAllResponse.data.filter(
                         (q: Question) => q._id !== currentQuestion._id
                     );
-                    
+
                     if (otherQuestions.length === 0) {
                         setError('No alternative questions available for this level.');
                         return;
                     }
-                    
-                    // Select a random question from available alternatives
+
                     const randomIndex = Math.floor(Math.random() * otherQuestions.length);
                     const newQuestion = otherQuestions[randomIndex];
-                    
-                    console.log('Changing to new question:', newQuestion);
-                    
-                    // IMPORTANT: Mark the lifeline as used BEFORE changing the question
-                    // This ensures the state update happens before UI re-renders
+
                     setUsedLifelines(prev => ({
                         ...prev,
                         [lifelineType]: true
                     }));
-                    
-                    // Now update the question
+
                     setCurrentQuestion(newQuestion);
                     setTimeLeft(newQuestion.timeLimit);
                     setSelectedAnswer('');
-                    
-                    // Mark lifeline as used on the server
+
                     await api.post('/questions/lifeline', {
                         lifelineType,
-                        questionId: currentQuestion._id, // Send original question ID
+                        questionId: currentQuestion._id,
                     }, {
                         headers: { Authorization: `Bearer ${token}` },
                     });
-                    
-                    console.log(`Lifeline ${lifelineType} marked as used:`, true);
+
                     return;
                 } else {
                     setError('No questions available for this level.');
                     return;
                 }
             } else if (lifelineType === 'audiencePoll') {
-                // Mark the lifeline as used
                 setUsedLifelines(prev => ({
                     ...prev,
                     [lifelineType]: true
                 }));
 
-                // Generate audience poll results on client side if not receiving from backend
                 const correctAnswer = currentQuestion.correctAnswer;
                 const options = currentQuestion.options;
-                
-                // Generate a random percentage for the correct answer (between 50% and 85%)
+
                 const correctPercentage = Math.floor(Math.random() * 36) + 50;
-                
-                // Calculate the remaining percentage to distribute
                 const remainingPercentage = 100 - correctPercentage;
-                
-                // Get the incorrect options
+
                 const incorrectOptions = options.filter(option => option !== correctAnswer);
-                
-                // Initialize results object
+
                 const pollResults: AudiencePollResult = {};
-                
-                // Set the correct answer percentage
                 pollResults[correctAnswer] = correctPercentage;
-                
-                // Distribute remaining percentage among incorrect options
+
                 let remainingToDistribute = remainingPercentage;
                 for (let i = 0; i < incorrectOptions.length; i++) {
                     const option = incorrectOptions[i];
                     if (i === incorrectOptions.length - 1) {
-                        // Last option gets all remaining percentage
                         pollResults[option] = remainingToDistribute;
                     } else {
-                        // Calculate a random percentage for this option
                         const maxForOption = Math.floor(remainingToDistribute / (incorrectOptions.length - i));
                         const percentage = Math.floor(Math.random() * maxForOption);
                         pollResults[option] = percentage;
                         remainingToDistribute -= percentage;
                     }
                 }
-                
-                console.log("Client-generated audience poll results:", pollResults);
+
                 setAudiencePollResults(pollResults);
-                
-                // Still call the API to mark the lifeline as used on the server
+
                 const token = localStorage.getItem('token');
                 await api.post('/questions/lifeline', {
                     lifelineType,
@@ -369,10 +352,9 @@ const StartQuiz: React.FC = () => {
                 }, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                
+
                 return;
             } else {
-                // For other lifelines, use the normal approach
                 const token = localStorage.getItem('token');
                 const response = await api.post('/questions/lifeline', {
                     lifelineType,
@@ -381,9 +363,6 @@ const StartQuiz: React.FC = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                console.log('Lifeline response:', response.data);
-                
-                // IMPORTANT: Mark the lifeline as used BEFORE updating UI
                 setUsedLifelines(prev => ({
                     ...prev,
                     [lifelineType]: true
@@ -396,46 +375,31 @@ const StartQuiz: React.FC = () => {
                         options: result
                     });
                 } else if (lifelineType === 'showAnswer') {
-                    // Set the correct answer as highlighted AND selected
                     setCorrectAnswer(result);
-                    setSelectedAnswer(result); // Automatically select the correct answer
+                    setSelectedAnswer(result);
                 } else if (lifelineType === 'audiencePoll') {
-                    // Use the server results if they're provided
                     setAudiencePollResults(result);
                 }
             }
-            
-            console.log('Used lifelines after update:', {...usedLifelines, [lifelineType]: true});
         } catch (err: any) {
-            console.error('Error details:', err.response?.data);
-            
-            // Filter certain error messages that we don't want to show to the user
             if (err.response?.data?.message === 'Lifeline already used') {
                 setError('This lifeline has already been used.');
-                
-                // Update local state to reflect this lifeline is used
                 setUsedLifelines(prev => ({
                     ...prev,
                     [lifelineType]: true
                 }));
             } else if (err.response?.data?.message === 'No alternative questions available for this level.') {
                 setError('No alternative questions available for this level.');
-            } else if (err.response?.data?.message === 'Invalid lifeline type') {
-                // Don't show this error to the user, just log it
-                console.log('Server reported invalid lifeline type');
             } else {
-                // Generic error message for other errors
                 setError('An error occurred. Please try again.');
             }
         }
     };
 
-    // Add debugging to see if usedLifelines is updating correctly
     useEffect(() => {
         console.log('Used lifelines updated:', usedLifelines);
     }, [usedLifelines]);
 
-    // Modal close handler
     const handleCloseModal = () => {
         setShowEndGameModal(false);
         navigate('/dashboard');
@@ -466,8 +430,9 @@ const StartQuiz: React.FC = () => {
     return (
         <>
             <Header />
+            <Particles />
             <div style={styles.container}>
-                <p style={styles.timer}>
+                <p style={styles.timer} className="timer">
                     Time Left: {timeLeft === Infinity || timeLeft >= 999000 ? 'Unlimited' : `${timeLeft} seconds`}
                 </p>
                 <h1 style={styles.title}>Quiz</h1>
@@ -476,7 +441,7 @@ const StartQuiz: React.FC = () => {
                     <p style={styles.prize}>Prize: ₹{currentPrize}</p>
                 </div>
                 <p style={styles.question}>{currentQuestion.questionText}</p>
-                <div style={styles.optionsContainer}>
+                <div style={styles.optionsContainer} className="optionsContainer">
                     {currentQuestion.options.map((option, index) => (
                         <label
                             key={index}
@@ -494,51 +459,67 @@ const StartQuiz: React.FC = () => {
                                 value={option}
                                 checked={selectedAnswer === option}
                                 onChange={(e) => setSelectedAnswer(e.target.value)}
-                                style={{ display: 'none' }} // Hide the radio button
+                                style={{ display: 'none' }}
                             />
-                            {option}
+                            <span className="option-letter">{String.fromCharCode(65 + index)}</span>
+                            <span className="option-text">{option}</span>
                             {audiencePollResults && audiencePollResults[option] !== undefined && (
-                                <span style={styles.pollPercentage}>
-                                    {' '}{audiencePollResults[option]}%
-                                </span>
+                                <div style={styles.pollContainer}>
+                                    <div style={{
+                                        ...styles.pollBar,
+                                        width: `${audiencePollResults[option]}%`
+                                    }}></div>
+                                    <span style={styles.pollPercentage}>
+                                        {audiencePollResults[option]}%
+                                    </span>
+                                </div>
                             )}
                         </label>
                     ))}
                 </div>
                 {error && <p style={styles.error}>{error}</p>}
-                <button onClick={handleAnswerSubmit} style={styles.button}>Submit Answer</button>
-                <div style={styles.lifelineContainer}>
+                <button onClick={handleAnswerSubmit} style={styles.button}>
+                    <span>Submit Answer</span>
+                </button>
+                <div style={styles.lifelineContainer} className="lifeline-container">
                     <button 
                         onClick={() => handleUseLifeline('5050')} 
                         style={usedLifelines['5050'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
                         disabled={usedLifelines['5050']}
+                        className="lifeline-button"
                     >
-                        50:50
+                        <span className="lifeline-icon">50:50</span>
+                        <span className="lifeline-text">Eliminate Two</span>
                     </button>
                     <button 
                         onClick={() => handleUseLifeline('audiencePoll')} 
                         style={usedLifelines['audiencePoll'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
                         disabled={usedLifelines['audiencePoll']}
+                        className="lifeline-button"
                     >
-                        Audience Poll
+                        <span className="lifeline-icon">👥</span>
+                        <span className="lifeline-text">Audience Poll</span>
                     </button>
                     <button 
                         onClick={() => handleUseLifeline('changeQuestion')} 
                         style={usedLifelines['changeQuestion'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
                         disabled={usedLifelines['changeQuestion']}
+                        className="lifeline-button"
                     >
-                        Flip the Question
+                        <span className="lifeline-icon">🔄</span>
+                        <span className="lifeline-text">Flip the Question</span>
                     </button>
                     <button 
                         onClick={() => handleUseLifeline('showAnswer')} 
                         style={usedLifelines['showAnswer'] ? {...styles.lifelineButton, ...styles.disabledLifeline} : styles.lifelineButton}
                         disabled={usedLifelines['showAnswer']}
+                        className="lifeline-button"
                     >
-                        Expert's Advice
+                        <span className="lifeline-icon">💡</span>
+                        <span className="lifeline-text">Expert's Advice</span>
                     </button>
                 </div>
                 
-                {/* End Game Modal */}
                 {showEndGameModal && (
                     <div style={styles.modalOverlay}>
                         <div style={styles.modal}>
@@ -559,132 +540,209 @@ const StartQuiz: React.FC = () => {
 
 const styles = {
     container: {
-        maxWidth: '800px',
-        margin: '100px auto 50px',
+        width: '100%',
+        minHeight: 'calc(100vh - 60px)',
+        margin: '0',
         padding: '20px',
-        fontFamily: 'Arial, sans-serif',
+        maxWidth: '100vw',
+        fontFamily: '"Montserrat", Arial, sans-serif',
         textAlign: 'center' as const,
-        backgroundColor: '#1a1a3d', // Dark violet background
-        color: '#fff', // White text
-        borderRadius: '10px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-        position: 'relative' as const, // Ensure positioning for timer
+        background: 'linear-gradient(135deg, #1a1a3d 0%, #0d0d2b 100%)',
+        color: '#fff',
+        position: 'relative' as const,
+        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        boxSizing: 'border-box' as const,
+        paddingTop: '100px',  // Add padding at the top for better positioning
     },
     timer: {
         fontSize: '1.5rem',
-        color: '#ffcc00', // Yellow for timer
+        color: '#ffcc00',
         marginBottom: '20px',
         position: 'absolute' as const,
-        top: '10px',
-        right: '10px',
+        top: '60px', // Changed from 15px to 60px to bring timer lower
+        right: '20px',
+        background: 'rgba(0,0,0,0.3)',
+        padding: '5px 15px',
+        borderRadius: '20px',
+        fontWeight: 'bold' as const,
+        boxShadow: '0 0 10px rgba(255, 204, 0, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
     },
     title: {
-        fontSize: '2rem',
-        color: '#ffcc00', // Yellow for title
-        marginBottom: '20px',
+        fontSize: '2.2rem',
+        background: 'linear-gradient(to right, #ffcc00, #ff9d00)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        marginBottom: '25px',
+        marginTop: '0',  // Ensure title doesn't have extra top margin
+        letterSpacing: '1px',
+        textTransform: 'uppercase' as const,
+        fontWeight: 'bold' as const,
     },
     levelInfo: {
         display: 'flex',
         justifyContent: 'space-between',
         width: '100%',
-        marginBottom: '15px',
+        maxWidth: '800px',  // Add max width for better readability
+        marginBottom: '25px',
+        padding: '10px 15px',
+        background: 'rgba(0,0,0,0.2)',
+        borderRadius: '10px',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
     },
     level: {
         fontSize: '1.2rem',
         color: '#ccc',
+        fontWeight: 'bold' as const,
     },
     prize: {
         fontSize: '1.2rem',
         color: '#ffcc00',
         fontWeight: 'bold' as const,
+        textShadow: '0 0 5px rgba(255, 204, 0, 0.5)',
     },
     question: {
-        fontSize: '1.2rem',
-        marginBottom: '20px',
+        fontSize: '1.3rem',
+        marginBottom: '25px',
+        padding: '20px',
+        width: '100%',
+        maxWidth: 'calc(100vw - 40px)',
+        background: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: '12px',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+        lineHeight: '1.6',
+        fontWeight: '500' as const,
+        color: '#e6e6ff',
+        boxSizing: 'border-box' as const,
+        wordWrap: 'break-word' as const,
     },
     optionsContainer: {
-        display: 'grid', // Use grid layout
-        gridTemplateColumns: '1fr 1fr', // Two columns
-        gap: '15px',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '20px',
         justifyContent: 'center',
-        marginBottom: '20px',
+        marginBottom: '30px',
+        width: '100%',
+        maxWidth: 'calc(100vw - 40px)',
+        boxSizing: 'border-box' as const,
     },
     option: {
-        backgroundColor: '#333366', // Dark blue for options
+        background: 'linear-gradient(135deg, #333366 0%, #252550 100%)',
         color: '#fff',
-        padding: '10px 20px',
-        borderRadius: '5px',
+        padding: '15px 20px',
+        borderRadius: '12px',
         cursor: 'pointer',
-        border: 'none',
-        fontSize: '1rem',
-        textAlign: 'center' as const,
-        transition: 'background-color 0.3s',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        fontSize: '1.1rem',
+        textAlign: 'left' as const,
+        transition: 'all 0.3s',
+        display: 'flex',
+        alignItems: 'center',
+        position: 'relative' as const,
+        overflow: 'hidden',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+        height: '100%',
     },
     optionHover: {
-        backgroundColor: '#444488', // Slightly lighter blue on hover
+        background: 'linear-gradient(135deg, #444488 0%, #333366 100%)',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
     },
     selectedOption: {
-        backgroundColor: '#cc7722', // Yellow ochre for selected option
+        background: 'linear-gradient(135deg, #cc7722 0%, #aa5500 100%)',
         color: '#fff',
         fontWeight: 'bold' as const,
-        border: '2px solid #a65e2e', // Slightly darker border for emphasis
-        padding: '10px 20px',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        textAlign: 'center' as const,
-        transition: 'background-color 0.3s',
+        border: '1px solid #ffcc00',
+        boxShadow: '0 0 15px rgba(255, 204, 0, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2)',
     },
     correctOption: {
-        backgroundColor: '#28a745', // Green for correct answer
+        background: 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)',
         color: '#fff',
         fontWeight: 'bold' as const,
-        border: '2px solid #1e7e34', // Darker green border
-        boxShadow: '0 0 10px rgba(40, 167, 69, 0.7)', // Glow effect
-        padding: '10px 20px',
-        borderRadius: '5px',
-        cursor: 'pointer',
-        textAlign: 'center' as const,
-        transition: 'background-color 0.3s',
+        border: '1px solid #5ef087',
+        boxShadow: '0 0 20px rgba(40, 167, 69, 0.5), 0 4px 15px rgba(0, 0, 0, 0.2)',
+    },
+    pollContainer: {
+        position: 'absolute' as const,
+        bottom: '0',
+        left: '0',
+        width: '100%',
+        height: '8px',
+        background: 'rgba(0, 0, 0, 0.2)',
+    },
+    pollBar: {
+        height: '100%',
+        background: 'linear-gradient(to right, #ffcc00, #ff9d00)',
+        transition: 'width 1s ease-out',
     },
     pollPercentage: {
-        marginLeft: '10px',
+        position: 'absolute' as const,
+        right: '10px',
+        top: '50%',
+        transform: 'translateY(-50%)',
         fontWeight: 'bold' as const,
-        color: '#ffcc00', // Yellow color for poll percentages
+        color: '#ffcc00',
+        fontSize: '1.1rem',
     },
     button: {
-        padding: '10px 20px',
-        fontSize: '1rem',
+        padding: '12px 30px',
+        fontSize: '1.1rem',
         color: '#fff',
-        backgroundColor: '#007BFF',
+        background: 'linear-gradient(135deg, #007BFF 0%, #0056b3 100%)',
         border: 'none',
-        borderRadius: '5px',
+        borderRadius: '30px',
         cursor: 'pointer',
         marginTop: '20px',
+        fontWeight: 'bold' as const,
+        transition: 'all 0.3s',
+        boxShadow: '0 4px 15px rgba(0, 123, 255, 0.3)',
+        position: 'relative' as const,
+        overflow: 'hidden',
     },
     error: {
-        color: 'red',
-        fontSize: '0.9rem',
+        color: '#ff5555',
+        fontSize: '0.95rem',
         marginBottom: '20px',
+        padding: '10px',
+        background: 'rgba(255, 0, 0, 0.1)',
+        borderRadius: '5px',
+        border: '1px solid rgba(255, 0, 0, 0.2)',
     },
     lifelineContainer: {
         display: 'flex',
         justifyContent: 'center' as const,
-        gap: '10px',
-        marginTop: '20px',
+        gap: '15px',
+        marginTop: '30px',
+        flexWrap: 'wrap' as const,
     },
     lifelineButton: {
-        padding: '10px 15px',
+        padding: '12px 15px',
         fontSize: '0.9rem',
         color: '#fff',
-        backgroundColor: '#28a745',
+        background: 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)',
         border: 'none',
-        borderRadius: '5px',
+        borderRadius: '10px',
         cursor: 'pointer',
+        transition: 'all 0.3s',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '120px',
+        height: '80px',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
     },
     disabledLifeline: {
-        backgroundColor: '#cccccc',
+        background: 'linear-gradient(135deg, #666666 0%, #444444 100%)',
         cursor: 'not-allowed',
         opacity: 0.6,
+        boxShadow: 'none',
     },
     modalOverlay: {
         position: 'fixed' as const,
@@ -692,27 +750,31 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
+        backdropFilter: 'blur(5px)',
     },
     modal: {
-        backgroundColor: 'rgba(26, 26, 61, 0.95)',
-        padding: '30px',
-        borderRadius: '15px',
+        background: 'linear-gradient(135deg, #1a1a3d 0%, #0d0d2b 100%)',
+        padding: '40px',
+        borderRadius: '20px',
         width: '90%',
-        maxWidth: '500px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+        maxWidth: '550px',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 50px rgba(255, 204, 0, 0.15)',
         border: '2px solid #ffcc00',
         textAlign: 'center' as const,
-        animation: 'fadeIn 0.5s ease',
+        animation: 'fadeIn 0.7s ease',
+        position: 'relative' as const,
+        overflow: 'hidden',
     },
     modalTitle: {
         color: '#ffcc00',
-        fontSize: '1.8rem',
-        marginBottom: '20px',
+        fontSize: '2rem',
+        marginBottom: '25px',
+        textShadow: '0 0 10px rgba(255, 204, 0, 0.3)',
     },
     modalText: {
         color: '#fff',
@@ -721,25 +783,26 @@ const styles = {
     },
     modalPrize: {
         color: '#ffcc00',
-        fontSize: '2.5rem',
+        fontSize: '3rem',
         fontWeight: 'bold' as const,
         display: 'block',
-        margin: '15px 0',
+        margin: '20px 0',
+        textShadow: '0 0 15px rgba(255, 204, 0, 0.5)',
     },
     modalButton: {
         backgroundColor: '#ffcc00',
         color: '#1a1a3d',
         border: 'none',
-        padding: '12px 24px',
-        borderRadius: '8px',
-        fontSize: '1.1rem',
+        padding: '15px 30px',
+        borderRadius: '30px',
+        fontSize: '1.2rem',
         fontWeight: 'bold' as const,
         cursor: 'pointer',
         transition: 'all 0.3s ease',
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.2)',
     }
 };
 
-// Add animation for the modal
 const addGlobalStyle = (css: string) => {
     const head = document.getElementsByTagName('head')[0];
     const style = document.createElement('style');
@@ -749,9 +812,175 @@ const addGlobalStyle = (css: string) => {
 };
 
 addGlobalStyle(`
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+    
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        background: linear-gradient(135deg, #1a1a3d 0%, #0d0d2b 100%);
+    }
+    
+    body {
+        position: relative;
+    }
+    
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0,
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 10% 20%, rgba(90, 90, 255, 0.05) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(90, 90, 255, 0.05) 0%, transparent 40%),
+            linear-gradient(135deg, #1a1a3d 0%, #0d0d2b 100%);
+        z-index: -1;
+    }
+    
+    #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+    }
+    
+    * {
+        box-sizing: border-box;
+    }
+    
+    /* Media queries for responsive layout */
+    @media screen and (max-width: 768px) {
+        .optionsContainer {
+            grid-template-columns: 1fr !important;
+        }
+        
+        .option-letter {
+            width: 24px;
+            height: 24px;
+            font-size: 0.9rem;
+        }
+        
+        .lifeline-icon {
+            font-size: 1.2rem;
+        }
+        
+        .lifeline-text {
+            font-size: 0.7rem;
+        }
+        
+        /* Adjust padding for smaller screens */
+        #root > div {
+            padding-top: 80px !important;
+        }
+    }
+    
+    @media screen and (max-width: 480px) {
+        #root {
+            padding: 0;
+        }
+        
+        /* Adjust padding for very small screens */
+        #root > div {
+            padding-top: 70px !important;
+        }
+        
+        .timer {
+            top: 45px !important; /* Adjusted from 5px to 45px to match the lowered position */
+            right: 5px !important;
+            font-size: 1.2rem !important;
+            padding: 5px 10px !important;
+        }
+        
+        .lifeline-container {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 10px !important;
+        }
+        
+        .lifeline-button {
+            width: calc(50% - 5px) !important;
+            height: 70px !important;
+            padding: 8px !important;
+        }
+    }
+    
+    /* Prevent particle overflow */
+    .particle {
+        position: fixed;
+        width: 5px;
+        height: 5px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: floatingParticles 15s infinite linear;
+        z-index: 0;
+    }
+    
+    /* Other existing animations */
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
+        from { opacity: 0; transform: translateY(30px); }
         to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4); }
+        70% { box-shadow: 0 0 0 15px rgba(255, 204, 0, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); }
+    }
+    
+    @keyframes glow {
+        0% { box-shadow: 0 0 5px rgba(255, 204, 0, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); }
+        100% { box-shadow: 0 0 5px rgba(255, 204, 0, 0.3); }
+    }
+    
+    @keyframes floatingParticles {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+        50% { opacity: 0.5; }
+        100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+    }
+    
+    /* Apply custom classes to elements for responsive control */
+    .option-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: rgba(255,255,255,0.1);
+        margin-right: 15px;
+        border-radius: 50%;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .option-text {
+        flex-grow: 1;
+        word-break: break-word;
+        hyphens: auto;
+    }
+    
+    button:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    
+    button:active:not(:disabled) {
+        transform: translateY(-1px);
+    }
+    
+    .lifeline-icon {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    
+    .lifeline-text {
+        font-size: 0.8rem;
+        opacity: 0.9;
     }
 `);
 

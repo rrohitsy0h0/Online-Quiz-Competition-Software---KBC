@@ -6,6 +6,7 @@ import api from '../services/api';
 const Dashboard: React.FC = () => {
     const [username, setUsername] = useState<string>('');
     const [score, setScore] = useState<number>(0);
+    const [prizeWon, setPrizeWon] = useState<string>('0');
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
 
@@ -26,6 +27,10 @@ const Dashboard: React.FC = () => {
                         });
                         if (response.data && response.data.score) {
                             setScore(response.data.score);
+                            
+                            // Convert score to prize money format
+                            const formattedPrize = formatPrizeMoney(response.data.score);
+                            setPrizeWon(formattedPrize);
                         }
                     } catch (error) {
                         console.error('Error fetching user data:', error);
@@ -43,6 +48,14 @@ const Dashboard: React.FC = () => {
             setLoading(false);
         }
     }, []);
+
+    // Function to format score to prize money display
+    const formatPrizeMoney = (score: number): string => {
+        if (score === 0) return '₹0';
+        
+        // Format with commas for Indian number system (e.g., 1,00,000)
+        return '₹' + score.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    };
 
     return (
         <div style={styles.pageContainer}>
@@ -76,6 +89,12 @@ const Dashboard: React.FC = () => {
                         <div style={styles.statIcon}>⏱️</div>
                         <div style={styles.statValue}>4</div>
                         <div style={styles.statLabel}>Lifelines</div>
+                    </div>
+                    
+                    <div style={styles.statCard}>
+                        <div style={styles.statIcon}>💰</div>
+                        <div style={styles.statValue}>1,00,00,000</div>
+                        <div style={styles.statLabel}>Win Prize money</div>
                     </div>
                 </div>
                 
