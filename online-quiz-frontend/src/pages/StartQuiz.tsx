@@ -17,6 +17,30 @@ interface AudiencePollResult {
     [option: string]: number; // Maps each option to its percentage
 }
 
+// Function to get prize for level needs to be defined outside the components/hooks
+const getPrizeForLevel = (level: number): string => {
+    const prizeMoney = {
+        0: '0',
+        1: '1,000',
+        2: '2,000',
+        3: '3,000',
+        4: '5,000',
+        5: '10,000',
+        6: '20,000',
+        7: '40,000',
+        8: '80,000',
+        9: '1,60,000',
+        10: '3,20,000',
+        11: '6,40,000',
+        12: '12,50,000',
+        13: '25,00,000',
+        14: '50,00,000',
+        15: '75,00,000',
+        16: '1,00,00,000'
+    };
+    return prizeMoney[level as keyof typeof prizeMoney] || '0';
+};
+
 const StartQuiz: React.FC = () => {
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [selectedAnswer, setSelectedAnswer] = useState('');
@@ -32,7 +56,26 @@ const StartQuiz: React.FC = () => {
     });
     const [correctAnswer, setCorrectAnswer] = useState<string | null>(null);
     const [audiencePollResults, setAudiencePollResults] = useState<AudiencePollResult | null>(null);
+    const [currentPrize, setCurrentPrize] = useState<string>('');
+    const [showEndGameModal, setShowEndGameModal] = useState<boolean>(false);
+    const [finalPrize, setFinalPrize] = useState<string>('0');
+    const [gameEndReason, setGameEndReason] = useState<string>('');
     const navigate = useNavigate();
+
+    // Update the mouse event handlers to account for selected and correct options
+    const handleMouseEnter = (e: React.MouseEvent<HTMLLabelElement>, option: string) => {
+        // Only change background if this option isn't selected or correct
+        if (option !== selectedAnswer && option !== correctAnswer) {
+            e.currentTarget.style.backgroundColor = '#444488'; // Hover background
+        }
+    };
+
+    const handleMouseLeave = (e: React.MouseEvent<HTMLLabelElement>, option: string) => {
+        // Only reset background if this option isn't selected or correct
+        if (option !== selectedAnswer && option !== correctAnswer) {
+            e.currentTarget.style.backgroundColor = '#333366'; // Default background
+        }
+    };
 
     const resetLifelines = async () => {
         try {
@@ -112,8 +155,9 @@ const StartQuiz: React.FC = () => {
                         if (prevTime <= 1) {
                             clearInterval(timer);
                             tickingSound.pause(); // Stop the ticking sound
-                            alert('Time is up! Game over.');
-                            navigate('/dashboard');
+                            setGameEndReason('Time is up!');
+                            setFinalPrize(getPrizeForLevel(currentLevel - 1)); // Previous level prize
+                            setShowEndGameModal(true);
                         }
                         return prevTime - 1;
                     });
@@ -127,7 +171,40 @@ const StartQuiz: React.FC = () => {
                 setTimeLeft(Infinity);
             }
         }
-    }, [currentQuestion, navigate]);
+    }, [currentQuestion, currentLevel]); // Remove navigate from dependencies, add currentLevel
+
+    useEffect(() => {
+        // Update the prize money based on current level
+        setCurrentPrize(getPrizeForLevel(currentLevel));
+    }, [currentLevel]);
+
+    useEffect(() => {
+        // Add hover effect for modal button
+        const modalButton = document.querySelector('button[style*="modalButton"]');
+        if (modalButton) {
+            modalButton.addEventListener('mouseenter', (e) => {
+                const target = e.currentTarget as HTMLElement;
+                target.style.backgroundColor = '#ffd700';
+                target.style.transform = 'translateY(-2px)';
+                target.style.boxShadow = '0 6px 15px rgba(255, 204, 0, 0.4)';
+            });
+            
+            modalButton.addEventListener('mouseleave', (e) => {
+                const target = e.currentTarget as HTMLElement;
+                target.style.backgroundColor = '#ffcc00';
+                target.style.transform = 'translateY(0)';
+                target.style.boxShadow = 'none';
+            });
+        }
+
+        // Cleanup event listeners on unmount
+        return () => {
+            if (modalButton) {
+                modalButton.removeEventListener('mouseenter', () => {});
+                modalButton.removeEventListener('mouseleave', () => {});
+            }
+        };
+    }, []); // Empty dependency array means this runs once after first render
 
     const handleAnswerSubmit = async () => {
         if (!selectedAnswer || !currentQuestion) {
@@ -144,13 +221,31 @@ const StartQuiz: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` },
             });
             
-            // Instead of relying on response.nextLevel, manually increment the level
+            // If we've completed the final level, show the winning modal
+            if (currentQuestion.level === 16) {
+                setGameEndReason('Congratulations! You have won the grand prize!');
+                setFinalPrize(getPrizeForLevel(16));
+                setShowEndGameModal(true);
+                return;
+            }
+            
+            // Otherwise continue to the next level
             setCurrentLevel(currentQuestion.level + 1);
             setSelectedAnswer('');
             setError('');
         } catch (err: any) {
             if (err.response?.status === 400 && err.response?.data?.message === 'Wrong answer. Redirecting to dashboard.') {
-                navigate('/dashboard');
+                // Show the end game modal with the amount won
+                setGameEndReason('Sorry, that was the wrong answer.');
+                
+                // If they got at least one question right, they get the prize from the previous level
+                if (currentLevel > 1) {
+                    setFinalPrize(getPrizeForLevel(currentLevel - 1));
+                } else {
+                    setFinalPrize('0');
+                }
+                
+                setShowEndGameModal(true);
             } else {
                 console.error('Error submitting answer:', err.response?.data || err.message);
                 setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
@@ -340,6 +435,12 @@ const StartQuiz: React.FC = () => {
         console.log('Used lifelines updated:', usedLifelines);
     }, [usedLifelines]);
 
+    // Modal close handler
+    const handleCloseModal = () => {
+        setShowEndGameModal(false);
+        navigate('/dashboard');
+    };
+
     if (loading) {
         return (
             <>
@@ -370,7 +471,10 @@ const StartQuiz: React.FC = () => {
                     Time Left: {timeLeft === Infinity || timeLeft >= 999000 ? 'Unlimited' : `${timeLeft} seconds`}
                 </p>
                 <h1 style={styles.title}>Quiz</h1>
-                <p style={styles.level}>Level: {currentLevel}</p>
+                <div style={styles.levelInfo}>
+                    <p style={styles.level}>Level: {currentLevel}</p>
+                    <p style={styles.prize}>Prize: ₹{currentPrize}</p>
+                </div>
                 <p style={styles.question}>{currentQuestion.questionText}</p>
                 <div style={styles.optionsContainer}>
                     {currentQuestion.options.map((option, index) => (
@@ -381,6 +485,8 @@ const StartQuiz: React.FC = () => {
                                 ...(selectedAnswer === option ? styles.selectedOption : {}),
                                 ...(correctAnswer === option ? styles.correctOption : {}),
                             }}
+                            onMouseEnter={(e) => handleMouseEnter(e, option)}
+                            onMouseLeave={(e) => handleMouseLeave(e, option)}
                         >
                             <input
                                 type="radio"
@@ -431,6 +537,21 @@ const StartQuiz: React.FC = () => {
                         Expert's Advice
                     </button>
                 </div>
+                
+                {/* End Game Modal */}
+                {showEndGameModal && (
+                    <div style={styles.modalOverlay}>
+                        <div style={styles.modal}>
+                            <h2 style={styles.modalTitle}>{gameEndReason}</h2>
+                            <p style={styles.modalText}>
+                                You won: <span style={styles.modalPrize}>₹{finalPrize}</span>
+                            </p>
+                            <button onClick={handleCloseModal} style={styles.modalButton}>
+                                Return to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
@@ -462,10 +583,20 @@ const styles = {
         color: '#ffcc00', // Yellow for title
         marginBottom: '20px',
     },
+    levelInfo: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: '15px',
+    },
     level: {
         fontSize: '1.2rem',
-        color: '#555',
-        marginBottom: '10px',
+        color: '#ccc',
+    },
+    prize: {
+        fontSize: '1.2rem',
+        color: '#ffcc00',
+        fontWeight: 'bold' as const,
     },
     question: {
         fontSize: '1.2rem',
@@ -555,15 +686,73 @@ const styles = {
         cursor: 'not-allowed',
         opacity: 0.6,
     },
+    modalOverlay: {
+        position: 'fixed' as const,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    modal: {
+        backgroundColor: 'rgba(26, 26, 61, 0.95)',
+        padding: '30px',
+        borderRadius: '15px',
+        width: '90%',
+        maxWidth: '500px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+        border: '2px solid #ffcc00',
+        textAlign: 'center' as const,
+        animation: 'fadeIn 0.5s ease',
+    },
+    modalTitle: {
+        color: '#ffcc00',
+        fontSize: '1.8rem',
+        marginBottom: '20px',
+    },
+    modalText: {
+        color: '#fff',
+        fontSize: '1.2rem',
+        marginBottom: '30px',
+    },
+    modalPrize: {
+        color: '#ffcc00',
+        fontSize: '2.5rem',
+        fontWeight: 'bold' as const,
+        display: 'block',
+        margin: '15px 0',
+    },
+    modalButton: {
+        backgroundColor: '#ffcc00',
+        color: '#1a1a3d',
+        border: 'none',
+        padding: '12px 24px',
+        borderRadius: '8px',
+        fontSize: '1.1rem',
+        fontWeight: 'bold' as const,
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+    }
 };
 
-// Add hover effect for options
-const handleMouseEnter = (e: React.MouseEvent<HTMLLabelElement>) => {
-    (e.target as HTMLElement).style.backgroundColor = styles.optionHover.backgroundColor!;
+// Add animation for the modal
+const addGlobalStyle = (css: string) => {
+    const head = document.getElementsByTagName('head')[0];
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode(css));
+    head.appendChild(style);
 };
 
-const handleMouseLeave = (e: React.MouseEvent<HTMLLabelElement>) => {
-    (e.target as HTMLElement).style.backgroundColor = styles.option.backgroundColor!;
-};
+addGlobalStyle(`
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+`);
 
 export default StartQuiz;

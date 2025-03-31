@@ -297,8 +297,28 @@ class QuestionController {
                 return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
             }
 
-            // Correct answer: update user's score using level-based points
-            const points = question.level * 1000;
+            // Get points based on the level according to the provided KBC prize money structure
+            let points;
+            switch (question.level) {
+                case 1: points = 1000; break;
+                case 2: points = 2000; break;
+                case 3: points = 3000; break;
+                case 4: points = 5000; break;
+                case 5: points = 10000; break;
+                case 6: points = 20000; break;
+                case 7: points = 40000; break;
+                case 8: points = 80000; break;
+                case 9: points = 160000; break;
+                case 10: points = 320000; break;
+                case 11: points = 640000; break;
+                case 12: points = 1250000; break;
+                case 13: points = 2500000; break;
+                case 14: points = 5000000; break;
+                case 15: points = 7500000; break;
+                case 16: points = 10000000; break;
+                default: points = question.level * 1000; // Fallback
+            }
+
             user.score += points;
 
             // Always move to the next level
@@ -311,7 +331,8 @@ class QuestionController {
             return res.status(200).json({
                 message: 'Correct answer! Moving to next level.',
                 nextLevel: nextLevel,
-                score: user.score
+                score: user.score,
+                pointsEarned: points
             });
         } catch (error) {
             console.error('Error answering question:', error);
