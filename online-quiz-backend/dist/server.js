@@ -8,7 +8,6 @@ const db_1 = __importDefault(require("./config/db"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const questionRoutes_1 = __importDefault(require("./routes/questionRoutes"));
-// Remove leaderboardRoutes import
 const cors_1 = __importDefault(require("cors"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -24,7 +23,6 @@ app.use((0, cors_1.default)({
 // Define routes
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/questions', questionRoutes_1.default);
-// Remove leaderboard routes
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

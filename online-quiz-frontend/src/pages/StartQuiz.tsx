@@ -96,6 +96,7 @@ const StartQuiz: React.FC = () => {
     const [showEndGameModal, setShowEndGameModal] = useState<boolean>(false);
     const [finalPrize, setFinalPrize] = useState<string>('0');
     const [gameEndReason, setGameEndReason] = useState<string>('');
+    const [isGameOver, setIsGameOver] = useState<boolean>(false);
     const navigate = useNavigate();
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLLabelElement>, option: string) => {
@@ -163,7 +164,7 @@ const StartQuiz: React.FC = () => {
     }, [currentLevel, navigate]);
 
     useEffect(() => {
-        if (currentQuestion && currentQuestion.level <= 10) {
+        if (currentQuestion && currentQuestion.level <= 10 && !isGameOver) {
             const tickingSound = new Audio('/sounds/tick.mp3');
             tickingSound.loop = true;
 
@@ -179,6 +180,7 @@ const StartQuiz: React.FC = () => {
                             setGameEndReason('Time is up!');
                             setFinalPrize(getPrizeForLevel(currentLevel - 1));
                             setShowEndGameModal(true);
+                            setIsGameOver(true);
                         }
                         return prevTime - 1;
                     });
@@ -192,7 +194,7 @@ const StartQuiz: React.FC = () => {
                 setTimeLeft(Infinity);
             }
         }
-    }, [currentQuestion, currentLevel]);
+    }, [currentQuestion, currentLevel, isGameOver]);
 
     useEffect(() => {
         setCurrentPrize(getPrizeForLevel(currentLevel));
@@ -243,6 +245,7 @@ const StartQuiz: React.FC = () => {
                 setGameEndReason('Congratulations! You have won the grand prize!');
                 setFinalPrize(getPrizeForLevel(16));
                 setShowEndGameModal(true);
+                setIsGameOver(true);
                 return;
             }
 
@@ -258,6 +261,7 @@ const StartQuiz: React.FC = () => {
                     setFinalPrize('0');
                 }
                 setShowEndGameModal(true);
+                setIsGameOver(true);
             } else {
                 setError(err.response?.data?.message || 'Failed to submit answer. Please try again.');
             }
@@ -391,7 +395,7 @@ const StartQuiz: React.FC = () => {
             } else if (err.response?.data?.message === 'No alternative questions available for this level.') {
                 setError('No alternative questions available for this level.');
             } else {
-                setError('An error occurred. Please try again.');
+                // setError('An error occurred. Please try again.');
             }
         }
     };
@@ -688,7 +692,7 @@ const styles = {
         transform: 'translateY(-50%)',
         fontWeight: 'bold' as const,
         color: '#ffcc00',
-        fontSize: '1.1rem',
+        fontSize: '0.6rem',
     },
     button: {
         padding: '12px 30px',

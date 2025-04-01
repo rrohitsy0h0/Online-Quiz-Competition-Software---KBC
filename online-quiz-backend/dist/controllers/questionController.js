@@ -102,7 +102,7 @@ class QuestionController {
             var _a;
             const { lifelineType, questionId } = req.body;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-            console.log(`Lifeline requested: ${lifelineType}, Question ID: ${questionId}`); // Add this debug log
+            console.log(`Lifeline requested: ${lifelineType}, Question ID: ${questionId}`);
             if (!userId) {
                 return res.status(401).json({ message: 'Unauthorized' });
             }
@@ -130,17 +130,21 @@ class QuestionController {
                     // For Show Answer lifeline, simply return the correct answer
                     lifelineResult = question.correctAnswer;
                 }
+                else if (lifelineType === 'audiencePoll') {
+                    // Generate audience poll percentages
+                    lifelineResult = this.generateAudiencePollResults(question.options, question.correctAnswer);
+                }
                 else if (lifelineType === 'changeQuestion') {
-                    console.log('Processing changeQuestion lifeline'); // Add this debug log
+                    console.log('Processing changeQuestion lifeline');
                     // For Flip the Question lifeline, get a different random question of the same level
                     const currentLevel = question.level;
-                    console.log(`Finding alternative questions for level ${currentLevel}`); // Add this debug log
+                    console.log(`Finding alternative questions for level ${currentLevel}`);
                     // Find all questions of the current level except the current question
                     const availableQuestions = yield Question_1.default.find({
                         level: currentLevel,
                         _id: { $ne: questionId }
                     });
-                    console.log(`Found ${availableQuestions.length} alternative questions`); // Add this debug log
+                    console.log(`Found ${availableQuestions.length} alternative questions`);
                     if (availableQuestions.length === 0) {
                         return res.status(400).json({
                             message: 'No alternative questions available for this level.'
@@ -149,12 +153,12 @@ class QuestionController {
                     // Select a random question from the available questions
                     const randomIndex = Math.floor(Math.random() * availableQuestions.length);
                     const newQuestion = availableQuestions[randomIndex];
-                    console.log(`Selected new question: ${newQuestion._id}`); // Add this debug log
+                    console.log(`Selected new question: ${newQuestion._id}`);
                     // Return the new question as the result
                     lifelineResult = newQuestion;
                 }
                 else {
-                    console.log(`Unrecognized lifeline type: ${lifelineType}`); // Add this debug log
+                    console.log(`Unrecognized lifeline type: ${lifelineType}`);
                     return res.status(400).json({ message: 'Invalid lifeline type' });
                 }
                 // Mark the lifeline as used
@@ -167,6 +171,40 @@ class QuestionController {
                 res.status(500).json({ message: 'Error using lifeline', error });
             }
         });
+    }
+    // Helper method to generate audience poll results
+    generateAudiencePollResults(options, correctAnswer) {
+        // Generate a random percentage for the correct answer (between 50% and 80%)
+        const correctPercentage = Math.floor(Math.random() * 31) + 50; // Random between 50 and 80
+        // Calculate remaining percentage to distribute among incorrect options
+        const remainingPercentage = 100 - correctPercentage;
+        // Filter out the correct answer to get incorrect options
+        const incorrectOptions = options.filter(option => option !== correctAnswer);
+        // Distribute remaining percentage randomly among incorrect options
+        let results = {};
+        // Set the correct answer percentage
+        results[correctAnswer] = correctPercentage;
+        // Initialize all incorrect options with 0
+        incorrectOptions.forEach(option => {
+            results[option] = 0;
+        });
+        // Distribute remaining percentage randomly
+        let remainingToDistribute = remainingPercentage;
+        for (let i = 0; i < incorrectOptions.length; i++) {
+            // For the last option, assign all remaining percentage
+            if (i === incorrectOptions.length - 1) {
+                results[incorrectOptions[i]] = remainingToDistribute;
+            }
+            else {
+                // For other options, assign a random portion
+                const maxPercent = Math.floor(remainingToDistribute / (incorrectOptions.length - i));
+                const percent = i === incorrectOptions.length - 1 ?
+                    remainingToDistribute : Math.floor(Math.random() * maxPercent);
+                results[incorrectOptions[i]] = percent;
+                remainingToDistribute -= percent;
+            }
+        }
+        return results;
     }
     // Method to navigate to the next question
     nextQuestion(req, res) {
@@ -247,8 +285,59 @@ class QuestionController {
                 if (question.correctAnswer !== answer) {
                     return res.status(400).json({ message: 'Wrong answer. Redirecting to dashboard.' });
                 }
-                // Correct answer: update user's score using level-based points
-                const points = question.level * 1000;
+                // Get points based on the level according to the provided KBC prize money structure
+                let points;
+                switch (question.level) {
+                    case 1:
+                        points = 1000;
+                        break;
+                    case 2:
+                        points = 2000;
+                        break;
+                    case 3:
+                        points = 3000;
+                        break;
+                    case 4:
+                        points = 5000;
+                        break;
+                    case 5:
+                        points = 10000;
+                        break;
+                    case 6:
+                        points = 20000;
+                        break;
+                    case 7:
+                        points = 40000;
+                        break;
+                    case 8:
+                        points = 80000;
+                        break;
+                    case 9:
+                        points = 160000;
+                        break;
+                    case 10:
+                        points = 320000;
+                        break;
+                    case 11:
+                        points = 640000;
+                        break;
+                    case 12:
+                        points = 1250000;
+                        break;
+                    case 13:
+                        points = 2500000;
+                        break;
+                    case 14:
+                        points = 5000000;
+                        break;
+                    case 15:
+                        points = 7500000;
+                        break;
+                    case 16:
+                        points = 10000000;
+                        break;
+                    default: points = question.level * 1000; // Fallback
+                }
                 user.score += points;
                 // Always move to the next level
                 const nextLevel = question.level + 1;
@@ -259,7 +348,8 @@ class QuestionController {
                 return res.status(200).json({
                     message: 'Correct answer! Moving to next level.',
                     nextLevel: nextLevel,
-                    score: user.score
+                    score: user.score,
+                    pointsEarned: points
                 });
             }
             catch (error) {
