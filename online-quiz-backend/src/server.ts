@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to the database
+// Connect to MongoDB
 connectDB();
 
 // Middleware to parse JSON
