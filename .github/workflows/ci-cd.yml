@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm installstall
+        run: npm install
 
       - name: Install ESLint dependencies
         run: |
@@ -50,7 +50,7 @@ jobs:
 
       - name: Run backend tests
         run: npm run test
-        working-directory: online-quiz-backendstall
+        working-directory: online-quiz-backend
         env:
           MONGO_URI: mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC
 
@@ -72,7 +72,7 @@ jobs:
 
       - name: Run backend tests with coverage
         run: npm run test:coverage
-        working-directory: online-quiz-backendstall
+        working-directory: online-quiz-backend
         env:
           MONGO_URI: mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC
 
