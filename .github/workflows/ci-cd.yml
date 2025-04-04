@@ -37,3 +37,11 @@ jobs:
         working-directory: online-quiz-frontend
         env:
           CI: true
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: |
+            online-quiz-frontend/coverage
+            online-quiz-backend/coverage
