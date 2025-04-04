@@ -2,10 +2,13 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - main_copy
   pull_request:
-    branches: [ main ]
-
+    branches: 
+      - main
+      - main_copy
 jobs:
   lint:
     runs-on: ubuntu-latest
