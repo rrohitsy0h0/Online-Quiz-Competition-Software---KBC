@@ -12,9 +12,11 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 };
 
-const validateEmail = (email: string): boolean => {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
+// Quiz-specific utility functions
+const calculateScore = (level: number, timeLeft: number): number => {
+  const baseScore = level * 1000;
+  const timeBonus = Math.floor(timeLeft / 10) * 100;
+  return baseScore + timeBonus;
 };
 
 const getRandomIndex = (max: number): number => {
@@ -28,6 +30,15 @@ const shuffleArray = <T>(array: T[]): T[] => {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+};
+
+// Get two random options for fifty-fifty lifeline, ensuring one is the correct answer
+const getFiftyFiftyOptions = (options: string[], correctAnswer: string): string[] => {
+  const result: string[] = [correctAnswer];
+  const incorrectOptions = options.filter(option => option !== correctAnswer);
+  const randomIndex = getRandomIndex(incorrectOptions.length);
+  result.push(incorrectOptions[randomIndex]);
+  return shuffleArray(result);
 };
 
 describe('Utility Functions', () => {
@@ -57,18 +68,16 @@ describe('Utility Functions', () => {
     });
   });
 
-  describe('validateEmail', () => {
-    test('validates correct email formats', () => {
-      expect(validateEmail('user@example.com')).toBe(true);
-      expect(validateEmail('user.name@domain.co.in')).toBe(true);
-      expect(validateEmail('user+label@example.com')).toBe(true);
+  describe('calculateScore', () => {
+    test('calculates base score based on level', () => {
+      expect(calculateScore(1, 0)).toBe(1000);
+      expect(calculateScore(2, 0)).toBe(2000);
+      expect(calculateScore(10, 0)).toBe(10000);
     });
     
-    test('rejects invalid email formats', () => {
-      expect(validateEmail('invalid-email')).toBe(false);
-      expect(validateEmail('user@domain')).toBe(false);
-      expect(validateEmail('@domain.com')).toBe(false);
-      expect(validateEmail('user@.com')).toBe(false);
+    test('adds time bonus to score', () => {
+      expect(calculateScore(1, 20)).toBe(1200); // 1000 + (20/10)*100
+      expect(calculateScore(2, 30)).toBe(2300); // 2000 + (30/10)*100
     });
   });
 
@@ -107,6 +116,36 @@ describe('Utility Functions', () => {
       const copy = [...original];
       shuffleArray(original);
       expect(original).toEqual(copy);
+    });
+  });
+
+  describe('getFiftyFiftyOptions', () => {
+    test('returns array with correct answer and one other option', () => {
+      const options = ['A', 'B', 'C', 'D'];
+      const correctAnswer = 'C';
+      
+      // Mock Math.random
+      const originalRandom = Math.random;
+      Math.random = jest.fn().mockReturnValue(0.5);
+      
+      const result = getFiftyFiftyOptions(options, correctAnswer);
+      
+      expect(result).toHaveLength(2);
+      expect(result).toContain(correctAnswer);
+      
+      // Restore Math.random
+      Math.random = originalRandom;
+    });
+    
+    test('handles case with only two options', () => {
+      const options = ['Yes', 'No'];
+      const correctAnswer = 'Yes';
+      
+      const result = getFiftyFiftyOptions(options, correctAnswer);
+      
+      expect(result).toHaveLength(2);
+      expect(result).toContain('Yes');
+      expect(result).toContain('No');
     });
   });
 });
