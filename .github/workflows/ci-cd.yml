@@ -29,7 +29,11 @@ jobs:
       - name: Run backend tests
         run: npm run test
         working-directory: online-quiz-backend
+        env:
+          MONGO_URI: mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC
 
       - name: Run frontend tests
-        run: npm run test -- --watchAll=false --passWithNoTests
+        run: npm run test -- --watchAll=false --coverage
         working-directory: online-quiz-frontend
+        env:
+          CI: true
