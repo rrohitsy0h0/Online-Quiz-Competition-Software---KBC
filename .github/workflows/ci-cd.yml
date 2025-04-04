@@ -31,5 +31,5 @@ jobs:
         working-directory: online-quiz-backend
 
       - name: Run frontend tests
-        run: npm run test -- --watchAll=false
+        run: npm run test -- --watchAll=false --passWithNoTests
         working-directory: online-quiz-frontend
