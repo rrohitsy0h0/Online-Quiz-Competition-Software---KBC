@@ -184,7 +184,7 @@ class QuestionController {
         const incorrectOptions = options.filter(option => option !== correctAnswer);
         
         // Distribute remaining percentage randomly among incorrect options
-        let results: {[key: string]: number} = {};
+        const results: {[key: string]: number} = {};
         
         // Set the correct answer percentage
         results[correctAnswer] = correctPercentage;
