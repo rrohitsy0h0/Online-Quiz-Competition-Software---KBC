@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
+        node-version: [18.x]
 
     steps:
       - name: Checkout repository
@@ -37,11 +37,3 @@ jobs:
         working-directory: online-quiz-frontend
         env:
           CI: true
-
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports
-          path: |
-            online-quiz-frontend/coverage
-            online-quiz-backend/coverage
