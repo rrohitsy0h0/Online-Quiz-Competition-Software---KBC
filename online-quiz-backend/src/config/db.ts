@@ -3,11 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/online-quiz';
-
 const connectDB = async (): Promise<void> => {
+  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/online-quiz';
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(mongoUri);
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error);
