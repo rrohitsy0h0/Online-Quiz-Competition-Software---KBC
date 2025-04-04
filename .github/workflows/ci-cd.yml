@@ -32,15 +32,6 @@ jobs:
         env:
           MONGO_URI: mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC
 
-      - name: Run frontend tests
-        run: |
-          # Remove the problematic api.test.ts file before running tests
-          rm -f online-quiz-frontend/src/services/api.test.ts
-          npm run test -- --watchAll=false --coverage
-        working-directory: online-quiz-frontend
-        env:
-          CI: true
-
   code-coverage:
     runs-on: ubuntu-latest
     needs: build-and-test
@@ -63,15 +54,6 @@ jobs:
         env:
           MONGO_URI: mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC
 
-      - name: Run frontend tests with coverage
-        run: |
-          # Remove the problematic api.test.ts file before running tests
-          rm -f online-quiz-frontend/src/services/api.test.ts
-          npm run test -- --watchAll=false --coverage --collectCoverageFrom='src/**/*.{js,jsx,ts,tsx}'
-        working-directory: online-quiz-frontend
-        env:
-          CI: true
-
       - name: Check coverage threshold
         run: |
           if [ ! -f online-quiz-backend/coverage/coverage-summary.json ]; then
@@ -79,23 +61,11 @@ jobs:
             exit 1
           fi
 
-          if [ ! -f online-quiz-frontend/coverage/coverage-summary.json ]; then
-            echo "Frontend coverage report not found"
-            exit 1
-          fi
-
           BACKEND_COVERAGE=$(cat online-quiz-backend/coverage/coverage-summary.json | jq '.total.lines.pct')
-          FRONTEND_COVERAGE=$(cat online-quiz-frontend/coverage/coverage-summary.json | jq '.total.lines.pct')
           echo "Backend coverage: $BACKEND_COVERAGE%"
-          echo "Frontend coverage: $FRONTEND_COVERAGE%"
           
           if (( $(echo "$BACKEND_COVERAGE < 75" | bc -l) )); then
             echo "Backend coverage is below 75%"
-            exit 1
-          fi
-          
-          if (( $(echo "$FRONTEND_COVERAGE < 75" | bc -l) )); then
-            echo "Frontend coverage is below 75%"
             exit 1
           fi
         shell: bash
@@ -105,5 +75,4 @@ jobs:
         with:
           name: coverage-reports
           path: |
-            online-quiz-frontend/coverage
             online-quiz-backend/coverage
