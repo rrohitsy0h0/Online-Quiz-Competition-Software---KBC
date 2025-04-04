@@ -8,6 +8,13 @@ interface AuthenticatedRequest extends Request {
     };
 }
 
+interface DecodedToken {
+    id: string;
+    username: string;
+    iat?: number;
+    exp?: number;
+}
+
 export const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const token = req.headers['authorization']?.split(' ')[1];
 
@@ -16,7 +23,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     }
 
     try {
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'abc123'); // Using JWT_SECRET here
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'abc123') as DecodedToken; // Using JWT_SECRET here
         req.user = {
             id: decoded.id,
             username: decoded.username

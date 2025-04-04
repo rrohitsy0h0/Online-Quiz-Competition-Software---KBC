@@ -1,6 +1,6 @@
 import connectDB from '../db';
 import mongoose from 'mongoose';
-import { describe, beforeEach, jest, it,expect } from '@jest/globals';
+import { describe, beforeEach, jest, it, expect } from '@jest/globals';
 
 describe('Database Connection', () => {
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('Database Connection', () => {
     const testUri = 'mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC';
     process.env.MONGO_URI = testUri;
     // Spy on mongoose.connect and have it resolve
-    const mongooseConnectSpy = jest.spyOn(mongoose, 'connect').mockResolvedValueOnce(mongoose as any);
+    const mongooseConnectSpy = jest.spyOn(mongoose, 'connect').mockImplementation(() => Promise.resolve({} as mongoose.Connection));
     const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     await connectDB();
@@ -23,7 +23,7 @@ describe('Database Connection', () => {
   it('should exit process on connection error', async () => {
     const errorMessage = 'Connection failed';
     // Make mongoose.connect reject with an error
-    const mongooseConnectSpy = jest.spyOn(mongoose, 'connect').mockRejectedValueOnce(new Error(errorMessage));
+    const mongooseConnectSpy = jest.spyOn(mongoose, 'connect').mockImplementation(() => Promise.reject(new Error(errorMessage)));
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     const processExitSpy = jest.spyOn(process, 'exit' as any).mockImplementation((...args: unknown[]) => {
       const code = args[0] as number | undefined;
