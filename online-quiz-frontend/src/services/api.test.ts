@@ -1,7 +1,8 @@
 // Add an export to make this a module
 export {};
 
-import axios from 'axios';
+// Use require instead of import to avoid SyntaxError in Jest
+const axios = require('axios');
 
 // Mock axios for testing
 jest.mock('axios');

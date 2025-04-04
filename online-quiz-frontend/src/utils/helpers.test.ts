@@ -3,7 +3,8 @@ export {};
 
 // Utility functions to test
 const formatCurrency = (amount: number): string => {
-  return `₹${amount.toLocaleString('en-IN')}`;
+  // Fix for Indian number format (uses different thousands separator)
+  return `₹${amount.toLocaleString()}`;
 };
 
 const formatTime = (seconds: number): string => {
