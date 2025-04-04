@@ -52,14 +52,6 @@
     "@types/react-router-dom": "^5.3.3"
   },
   "jest": {
-    "collectCoverage": true,
-    "collectCoverageFrom": [
-      "src/**/*.{js,jsx,ts,tsx}",
-      "!src/**/*.d.ts",
-      "!src/index.tsx",
-      "!src/reportWebVitals.ts",
-      "!src/setupTests.ts"
-    ],
     "coverageThreshold": {
       "global": {
         "branches": 75,
@@ -67,6 +59,13 @@
         "lines": 75,
         "statements": 75
       }
-    }
+    },
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/index.tsx",
+      "!src/reportWebVitals.ts",
+      "!src/setupTests.ts"
+    ]
   }
 }

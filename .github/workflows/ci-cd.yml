@@ -68,6 +68,16 @@ jobs:
 
       - name: Check coverage threshold
         run: |
+          if [ ! -f online-quiz-backend/coverage/coverage-summary.json ]; then
+            echo "Backend coverage report not found"
+            exit 1
+          fi
+
+          if [ ! -f online-quiz-frontend/coverage/coverage-summary.json ]; then
+            echo "Frontend coverage report not found"
+            exit 1
+          fi
+
           BACKEND_COVERAGE=$(cat online-quiz-backend/coverage/coverage-summary.json | jq '.total.lines.pct')
           FRONTEND_COVERAGE=$(cat online-quiz-frontend/coverage/coverage-summary.json | jq '.total.lines.pct')
           echo "Backend coverage: $BACKEND_COVERAGE%"
