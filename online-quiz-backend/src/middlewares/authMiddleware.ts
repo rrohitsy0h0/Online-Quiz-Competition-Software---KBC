@@ -16,7 +16,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'abc123') as { id: string; username: string };
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'abc123'); // Using JWT_SECRET here
         req.user = {
             id: decoded.id,
             username: decoded.username
