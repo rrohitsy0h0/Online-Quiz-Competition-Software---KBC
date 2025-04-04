@@ -2,13 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - main_copy
+    branches: []
   pull_request:
-    branches: 
-      - main
-      - main_copy
+    branches: []
 
 jobs:
   lint:
