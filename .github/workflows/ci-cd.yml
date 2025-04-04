@@ -37,3 +37,57 @@ jobs:
         working-directory: online-quiz-frontend
         env:
           CI: true
+
+  code-coverage:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run backend tests with coverage
+        run: npm run test -- --coverage
+        working-directory: online-quiz-backend
+        env:
+          MONGO_URI: mongodb+srv://rrohitsatpute:r85Qn3nzyp8MR8qF@kbc.9w3zz.mongodb.net/quizdb?retryWrites=true&w=majority&appName=KBC
+
+      - name: Run frontend tests with coverage
+        run: npm run test -- --watchAll=false --coverage --collectCoverageFrom='src/**/*.{js,jsx,ts,tsx}'
+        working-directory: online-quiz-frontend
+        env:
+          CI: true
+
+      - name: Check coverage threshold
+        run: |
+          BACKEND_COVERAGE=$(cat online-quiz-backend/coverage/coverage-summary.json | jq '.total.lines.pct')
+          FRONTEND_COVERAGE=$(cat online-quiz-frontend/coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Backend coverage: $BACKEND_COVERAGE%"
+          echo "Frontend coverage: $FRONTEND_COVERAGE%"
+          
+          if (( $(echo "$BACKEND_COVERAGE < 75" | bc -l) )); then
+            echo "Backend coverage is below 75%"
+            exit 1
+          fi
+          
+          if (( $(echo "$FRONTEND_COVERAGE < 75" | bc -l) )); then
+            echo "Frontend coverage is below 75%"
+            exit 1
+          fi
+        shell: bash
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            online-quiz-frontend/coverage
+            online-quiz-backend/coverage
