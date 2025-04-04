@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';  // Add JwtPayload to the import
+import jwt from 'jsonwebtoken'; // Removed JwtPayload import
 
 // Define a type for the decoded token
 type DecodedToken = {
@@ -107,7 +107,6 @@ describe('Authentication Middleware', () => {
     
     const jwtVerifyMock = jwt.verify as jest.MockedFunction<typeof jwt.verify>;
     
-    // Now use JwtPayload directly since we imported it
     jwtVerifyMock.mockReturnValue(mockDecodedToken as any);
     
     authMiddleware(mockRequest as RequestWithUser, mockResponse as unknown as Response, nextFunction);
